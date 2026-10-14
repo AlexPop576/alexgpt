@@ -1,5 +1,5 @@
 import numpy as np
-from myLLM.tokenizer import CharTokenizer
+from alexgpt.tokenizer import CharTokenizer
 
 def count_bigrams(ids, vocab_size):
     N = np.zeros((vocab_size, vocab_size), dtype = np.int64)
