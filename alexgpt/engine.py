@@ -14,6 +14,25 @@ class Value:
             self.a.grad += self.grad * self.b.data
             self.b.grad += self.grad * self.a.data
 
+    def build_order(self, order, visited):
+        if self in visited:
+            return
+        visited.add(self)
+        if self.a != None:
+            self.a.build_order(order, visited)
+        if self.b != None:
+            self.b.build_order(order, visited)
+        order.append(self)
+
+    def backward(self):
+        order = []
+        visited = set()
+        self.build_order(order, visited)
+
+        self.grad = 1.0
+        for node in reversed(order):
+            node.backward_step()
+
 def add(x, y):
     return Value(x.data + y.data, x, y, "+")
 
