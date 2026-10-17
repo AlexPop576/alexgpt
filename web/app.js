@@ -305,6 +305,7 @@ const LAYER_INFO = {
   hidden:    "<b>tanh → h.</b> Same neurons, same positions as on the left, squashed between −1 and 1. Compare the two blocks: big values saturate to full blue or full orange.",
   logits:    "<b>Logits: h · W2 + b2.</b> The matching step. Each character has a template (its column of W2); its score is the dot product between h and that template. Bars to the right are positive scores.",
   output:    "<b>Softmax → probabilities.</b> exp(score / temperature), divided by the total. Only the differences between scores matter: 1.4 points ahead at temperature 0.7 means e^(1.4/0.7) ≈ 7× more likely. The ringed character was drawn at random.",
+  attention: "<b>Attention.</b> The newest character compares its query with the key of every character before it (dot product), softmax turns the scores into shares, and it collects a weighted mix of their values. Thicker arc = bigger share. Quartz is untrained for now, so the shares are still random.",
   table:     "<b>Count table.</b> Pebble has no neurons: it reads the row of the previous character from its table of counts.",
   loss:      "<b>Loss, only during training.</b> −log of the probability given to the real next character. When chatting there is no right answer, so there is no loss.",
   idle:      "Hover a layer to see what it does. Turn on Weights to see which connections carry the most signal for the current character.",
@@ -383,6 +384,12 @@ function drawNetwork(step) {
   const sans = getComputedStyle(document.body).fontFamily;
   const mono = "JetBrains Mono, ui-monospace, Consolas, monospace";
   const top = step ? step.top : [];
+
+  if (layers.attention) {
+    drawAttentionView(context, step, info, colors, sans, mono);
+    $("networkLabel").textContent = formatParams(info.params);
+    return;
+  }
 
   // --- layer names
   context.font = "500 17px " + sans;
@@ -542,6 +549,17 @@ function drawNetwork(step) {
     context.fillText("one row of counts", (NET.input + NET.output) / 2, NET_BOTTOM + 28);
   }
 
+  drawOutputs(context, step, info, colors, sans, mono, outputY);
+
+  $("networkLabel").textContent = formatParams(info.params);
+}
+
+
+// output column (softmax) and the dashed loss box, shared by every model
+function drawOutputs(context, step, info, colors, sans, mono, outputY) {
+  const top = step ? step.top : [];
+  context.textAlign = "center";
+  context.textBaseline = "middle";
   // output: the 5 most likely characters after softmax
   for (let k = 0; k < 5; k++) {
     circle(context, NET.output, outputY[k], 17, colors.surface);
@@ -577,8 +595,88 @@ function drawNetwork(step) {
   context.fillStyle = colors.faint;
   context.font = "500 15px " + sans;
   context.fillText("loss · training", NET.output + 14, 402);
+}
 
-  $("networkLabel").textContent = formatParams(info.params);
+// Quartz: the context as one row of characters; arcs show where the newest character looks
+function drawAttentionView(context, step, info, colors, sans, mono) {
+  const contextSize = info.context_size;
+  const rowY = 250;
+  const left = 24;
+  const right = 640;
+  const gap = (right - left) / (contextSize - 1);
+  const weights = step && step.attention ? step.attention : null;
+  let biggest = 1e-9;
+  if (weights) for (const value of weights) biggest = Math.max(biggest, value);
+
+  context.font = "500 17px " + sans;
+  context.fillStyle = colors.faint;
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+  context.fillText("context · where the newest character looks", left - 10, 26);
+  context.textAlign = "center";
+  context.fillText("softmax", NET.output + 22, 26);
+
+  // arcs from the newest character to every character it can see
+  const newestX = right;
+  if (weights) {
+    context.lineCap = "round";
+    for (let s = 0; s < contextSize; s++) {
+      const share = weights[s] / biggest;                     // 1 = the position it looks at most
+      if (share < 0.02) continue;
+      const x = left + s * gap;
+      const height = 30 + (newestX - x) * 0.32;
+      context.strokeStyle = colors.accent;
+      context.globalAlpha = 0.12 + 0.88 * share;
+      context.lineWidth = 1 + 7 * share;
+      context.beginPath();
+      context.moveTo(newestX, rowY - 14);
+      context.quadraticCurveTo((newestX + x) / 2, rowY - 14 - height, x, rowY - 14);
+      context.stroke();
+    }
+    context.globalAlpha = 1;
+  }
+
+  // the characters, with a small bar under each one: its share of the attention
+  context.textBaseline = "middle";
+  for (let s = 0; s < contextSize; s++) {
+    const x = left + s * gap;
+    const char = step ? step.context[s] : " ";
+    const newest = s === contextSize - 1;
+    circle(context, x, rowY, 10, colors.surface);
+    if (newest && step) {
+      context.strokeStyle = colors.accent;
+      context.lineWidth = 2;
+      context.beginPath(); context.arc(x, rowY, 10, 0, Math.PI * 2); context.stroke();
+    }
+    context.fillStyle = char === " " || char === "\n" ? colors.faint : colors.text;
+    context.font = "500 13px " + mono;
+    context.fillText(visibleChar(char || " "), x, rowY + 1);
+    if (weights) {
+      const barHeight = 70 * weights[s] / biggest;
+      context.fillStyle = colors.accent;
+      context.globalAlpha = 0.85;
+      context.fillRect(x - 4, rowY + 18, 8, barHeight);
+      context.globalAlpha = 1;
+    }
+  }
+  if (weights) {
+    // name the position it looks at most
+    let best = 0;
+    for (let s = 1; s < contextSize; s++) if (weights[s] > weights[best]) best = s;
+    context.font = "400 14px " + mono;
+    context.fillStyle = colors.muted;
+    context.fillText(Math.round(weights[best] * 100) + "%", left + best * gap, rowY + 106);
+  }
+
+  // newest character -> outputs
+  const outputY = [];
+  for (let k = 0; k < 5; k++) outputY.push(spread(k, 5, NET_TOP + 14, NET_BOTTOM - 44));
+  if (step) {
+    context.strokeStyle = colors.line;
+    context.lineWidth = 1;
+    for (let k = 0; k < step.top.length; k++) line(context, newestX + 14, rowY, NET.output - 19, outputY[k]);
+  }
+  drawOutputs(context, step, info, colors, sans, mono, outputY);
 }
 
 // hovering a layer explains it under the drawing
@@ -586,6 +684,7 @@ function layerAt(x, y) {
   const info = state.available[state.current];
   const isMLP = info && info.layers && info.layers.hidden > 0;
   if (x > NET.output - 55 && y > 375) return "loss";
+  if (info && info.layers && info.layers.attention) return x > NET.output - 40 ? "output" : "attention";
   if (x < 60) return "input";
   if (x > NET.output - 40) return "output";
   if (!isMLP) return "table";

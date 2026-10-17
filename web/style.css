@@ -118,7 +118,6 @@ button { font: inherit; color: inherit; }
 
 .message { max-width: 720px; margin: 0 auto 30px; animation: rise 0.3s ease-out; }
 /* messages scrolled out of view are skipped by the browser while drawing */
-.message.done { content-visibility: auto; contain-intrinsic-size: auto 120px; }
 
 .message.user { display: flex; justify-content: flex-end; }
 .user-bubble {
