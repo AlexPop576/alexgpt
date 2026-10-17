@@ -29,6 +29,18 @@ class Tensor:
             grad_logits = self.probs.copy()
             grad_logits[np.arange(batch_size), self.targets] -= 1
             self.a.grad += grad_logits / batch_size * self.grad
+        elif self.op == "+":
+            self.a.grad += self.grad
+            self.b.grad += self.grad
+        elif self.op == "T":
+            self.a.grad += self.grad.T
+        elif self.op == "softmax":
+            T = self.data.shape[0]
+            for t in range(T):
+                w = self.data[t]                 
+                g = self.grad[t]                 
+                average = (w * g).sum()
+                self.a.grad[t] += w * (g-average) * self.scale
 
     def build_order(self, order, visited):
         if self in visited:
@@ -49,6 +61,11 @@ class Tensor:
         for node in reversed(order):
             node.backward_step()
 
+def transpose(x):
+    return Tensor(x.data.T, x, None, "T")
+
+def add(x, y):
+    return Tensor(x.data + y.data, x, y, "+")
 
 def matmul(x, y):
     return Tensor(x.data @ y.data, x, y, "@")
@@ -82,4 +99,21 @@ def cross_entropy(logits, targets):
     out = Tensor(np.array(loss), logits, None, "cross_entropy")
     out.probs = probs                                
     out.targets = targets
+    return out
+
+def causal_softmax(x, scale):
+    T = x.data.shape[0]
+    weights = np.zeros(x.data.shape)
+    for t in range(T):
+        row = x.data[t] * scale              # a NEW row (multiplying makes a copy), so x.data stays untouched
+        # 1. for every s > t:  row[s] = -np.inf
+        for s in range(x.data.shape[1]):
+            if s > t:
+                row[s] = -np.inf
+        # 2. exps = np.exp(row - row.max())
+        exps = np.exp(row - row.max())
+        # 3. weights[t] = exps / exps.sum()
+        weights[t] = exps / exps.sum()
+    out = Tensor(weights, x, None, "softmax")
+    out.scale = scale                        # remember it for backward
     return out

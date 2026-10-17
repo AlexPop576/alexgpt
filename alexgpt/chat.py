@@ -109,11 +109,103 @@ class SlateMLP:
             total += array.size
         return total
 
+def attention_forward(x, Wq, Wk, Wv):
+    # x: (T, C)   T = positions in the context, C = embedding size
+    # Wq, Wk, Wv: (C, H)   H = head size
+    # 1. q, k, v = x @ each matrix                      -> (T, H) each
+    q = x @ Wq
+    k = x @ Wk
+    v = x @ Wv
+    # 2. scores = q @ k.T                               -> (T, T)  scores[t][s] = q[t] · k[s]
+    scores = q @ k.T
+    # 3. scores = scores / sqrt(H)                      (keeps numbers small so softmax isn't too sharp)
+    scores = scores/np.sqrt(Wk.shape[1])
+    # 4. for every t, s with s > t: scores[t][s] = -inf (the causal mask, two for loops are fine)
+    for t in range(scores.shape[0]):
+        for s in range(scores.shape[1]):
+            if s > t:
+                scores[t][s] = -np.inf
+    # 5. weights = softmax on each row                  (subtract the row max first, like in chat.py)
+    T = scores.shape[0]
+    weights = np.zeros(scores.shape)
+    for t in range(T):
+        row = scores[t]                      # the scores of position t
+        biggest = row.max()                  # A: the biggest score in this row
+        exps = np.exp(row - biggest)         # A + B: subtract it from every number, then exp of every number
+        weights[t] = exps / exps.sum()       # C: divide every number by the sum of the row
+    # 6. out = weights @ v                              -> (T, H)
+    out = weights @ v
+    return out, weights
+
+def embed_with_positions(ids, token_table, position_table):
+    # ids: list of character ids, one per position     (length T)
+    # token_table: (vocab_size, C)    one row per character
+    # position_table: (max_T, C)      one row per position
+    T = len(ids)
+    C = token_table.shape[1]
+    x = np.zeros((T, C))
+    for i in range(T):
+        x[i] = token_table[ids[i]] + position_table[i]
+    return x
+
+class QuartzTransformer:
+    """Stage 4: a small Transformer. Attention + MLP blocks, sees the last 32 characters."""
+
+    def __init__(self, path):
+        data = np.load(path)
+        self.token_table = data["token_table"]
+        self.position_table = data["position_table"]
+        self.W_out = data["W_out"]
+        self.b_out = data["b_out"]
+        self.chars = list(data["chars"])
+        self.context_size = self.position_table.shape[0]
+        self.blocks = []
+        for b in range(int(data["n_blocks"])):
+            block = {}
+            for name in ("Wq", "Wk", "Wv", "W1", "b1", "W2", "b2"):
+                block[name] = data[f"block{b}_{name}"]
+            self.blocks.append(block)
+        self.last_attention = None              # kept for the interface
+
+    def next_char_probs(self, context_ids):
+        x = embed_with_positions(context_ids, self.token_table, self.position_table)
+        # for the interface: what happens to the NEWEST letter's vector in every block
+        self.trace = {"embedding": x[-1], "blocks": []}
+        for block in self.blocks:
+            attended, weights = attention_forward(x, block["Wq"], block["Wk"], block["Wv"])
+            x = x + attended                                     # residual
+            hidden = np.tanh(x @ block["W1"] + block["b1"])
+            thought = hidden @ block["W2"] + block["b2"]
+            x = x + thought                                      # residual
+            self.trace["blocks"].append({
+                "attention": weights[-1],       # where the newest letter looks
+                "attn_out": attended[-1],       # what attention added to its vector
+                "hidden": hidden[-1],           # the MLP neurons
+                "mlp_out": thought[-1],         # what the MLP added to its vector
+            })
+        self.last_attention = weights[-1]       # last block: where the newest letter looks
+        logits = x[-1] @ self.W_out + self.b_out
+        self.last_logits = logits
+        logits = logits - logits.max()
+        probs = np.exp(logits)
+        return probs / probs.sum()
+
+    def num_params(self):
+        total = self.token_table.size + self.position_table.size + self.W_out.size + self.b_out.size
+        for block in self.blocks:
+            for name in block:
+                total += block[name].size
+        return total
+
+    def layer_sizes(self):
+        return {"transformer": True, "blocks": len(self.blocks),
+                "embed_dim": int(self.token_table.shape[1]), "hidden": int(self.blocks[0]["W1"].shape[1])}
 
 # name -> (class, checkpoint file, short description)
 MODEL_REGISTRY = {
     "Pebble": (PebbleBigram, "checkpoints/pebble.npz", "Bigram · sees 1 character"),
     "Slate":  (SlateMLP,     "checkpoints/slate.npz",  "MLP · sees 8 characters"),
+    "Quartz": (QuartzTransformer, "checkpoints/quartz.npz", "Transformer · 3 blocks · sees 32 characters"),
 }
 
 
@@ -136,6 +228,14 @@ def load_models(project_root):
 # ---------------------------------------------------------------------------
 
 END_OF_STORY = "<|endoftext|>"
+
+
+def rounded(values):
+    """numpy array -> plain list with 2 decimals (smaller to send to the page)"""
+    result = []
+    for value in values:
+        result.append(round(float(value), 2))
+    return result
 
 
 def generate_stream(model, prompt, max_chars, temperature, rng):
@@ -190,6 +290,10 @@ def generate_stream(model, prompt, max_chars, temperature, rng):
             "top": top,
         }
 
+        attention = getattr(model, "last_attention", None)
+        if attention is not None:
+            step["attention"] = [round(float(value), 3) for value in attention]
+
         hidden = getattr(model, "last_hidden", None)
         if hidden is not None:
             step["neurons"] = [round(float(value), 2) for value in hidden]
@@ -201,6 +305,17 @@ def generate_stream(model, prompt, max_chars, temperature, rng):
             step["edges_in"] = edges_in
             step["edges_out"] = edges_out
             step["pre"] = [round(float(value), 2) for value in model.last_pre]
+            scores = []                                     # raw logits of the top 5 characters
+            for candidate in top_ids:
+                scores.append(round(float(model.last_logits[candidate]), 2))
+            step["scores"] = scores
+
+        trace = getattr(model, "trace", None)
+        if trace is not None:
+            step["trace"] = {
+                "embedding": rounded(trace["embedding"]),
+                "blocks": [{name: rounded(block[name]) for name in block} for block in trace["blocks"]],
+            }
             scores = []                                     # raw logits of the top 5 characters
             for candidate in top_ids:
                 scores.append(round(float(model.last_logits[candidate]), 2))
