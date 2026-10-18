@@ -91,7 +91,8 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
         try:
-            for step in generate_stream(model, prompt, max_chars, temperature, rng):
+            history = request.get("history") or []          # earlier messages of this chat (chat models only)
+            for step in generate_stream(model, prompt, max_chars, temperature, rng, history, bool(request.get("visualize"))):
                 self.write_event(step)
                 time.sleep(delay_seconds)
             self.write_event({"type": "done"})

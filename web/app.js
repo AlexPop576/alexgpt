@@ -75,7 +75,14 @@ function recolorIcons() {
 function visibleChar(char) {
   if (char === " ") return "␣";
   if (char === "\n") return "↵";
+  if (char.length > 1) return char.replace(/\n/g, "↵").replace(/^ /, "␣");   // a BPE token like " the"
   return char;
+}
+
+// Galaxy and later models chat (BPE tokens, conversation format) instead of continuing your text
+function isChatModel(name) {
+  const info = state.available[name];
+  return !!(info && info.layers && info.layers.chat);
 }
 
 function formatParams(count) {
@@ -131,7 +138,8 @@ async function loadModels() {
     if (!known) FAMILY.push({ name: info.name, dark: "#9db6d6", light: "#4f6788", note: info.description });
   }
 
-  const saved = loadPreference("alexgpt-model");
+  const openedChat = findChat(currentChatId);           // the chat open at start keeps its own model
+  const saved = openedChat && openedChat.model ? openedChat.model : loadPreference("alexgpt-model");
   if (saved && state.available[saved]) {
     selectModel(saved);
   } else {
@@ -190,6 +198,11 @@ function buildMenu() {
 function selectModel(name) {
   state.current = name;
   savePreference("alexgpt-model", name);
+  // the open chat remembers the model you picked, even before you write in it
+  try {
+    const openChat = findChat(currentChatId);
+    if (openChat && openChat.model !== name) { openChat.model = name; saveChats(); }
+  } catch (e) { /* chats not loaded yet */ }
   const info = state.available[name];
 
   $("modelName").textContent = name;
@@ -204,11 +217,17 @@ function selectModel(name) {
   }
 
   document.documentElement.style.setProperty("--accent", modelColor(name));
-  document.documentElement.dataset.model = name;          // lets the CSS give every model its own animations
+  document.documentElement.dataset.model = name;
+  document.documentElement.dataset.chat = isChatModel(name) ? "1" : "0";          // lets the CSS give every model its own animations
   setCosmosModel(name);
 
-  $("contextLabel").textContent = info.context_size + (info.context_size === 1 ? " character" : " characters");
-  buildContextChips(info.context_size);
+  if (isChatModel(name)) {
+    $("contextLabel").textContent = info.context_size + " tokens · last 32 shown";
+    buildContextChips(32);
+  } else {
+    $("contextLabel").textContent = info.context_size + (info.context_size === 1 ? " character" : " characters");
+    buildContextChips(info.context_size);
+  }
   buildMenu();
   updateSendButton();
   state.lastStep = null;
@@ -325,6 +344,15 @@ const LAYER_INFO = {
   block:     "<b>Transformer block.</b> The line on top is the residual stream: the newest character's vector, passed from block to block. Attention collects information from the characters before and adds it to the vector (first +), then the MLP thinks about it and adds its result (second +). The bars show how much each part changed the vector. Click a block to see its attention on top.",
   table:     "<b>Count table.</b> Spark has no neurons: it reads the row of the previous character from its table of counts.",
   loss:      "<b>Loss, only during training.</b> −log of the probability given to the real next character. When chatting there is no right answer, so there is no loss.",
+  g_input:     "<b>Input.</b> The last 12 tokens the model sees (it sees up to 256). The highlighted one is the newest: everything below is what happens to it to guess the token after it.",
+  g_embedding: "<b>Embedding.</b> The token's row from the token table (what it is) plus the row for its position (where it is) = the vector x, 512 numbers. Each thin cell is one number: accent = positive, red = negative, brighter = bigger.",
+  g_block:     "<b>A block.</b> Attention, then MLP. Each one ADDS its result to x instead of replacing it (the residual line on the left). The % says how much each part changed x in this block.",
+  g_heads:     "<b>Attention, 8 heads.</b> One row per head, the columns are the input tokens on top. Bright = the newest token takes a lot of information from that token. Every head looks for something different, at the same time.",
+  g_attention: "<b>What attention adds.</b> The 8 heads' results, glued (8 × 64 = 512) and mixed by the out layer. This vector is added to x.",
+  g_neurons:   "<b>MLP neurons.</b> x goes into 2048 neurons (shown squeezed to 256), then GELU. Here the token 'thinks' alone, using what attention brought: no looking at other tokens.",
+  g_mlp:       "<b>What the MLP adds.</b> The 2048 neurons are mixed back into 512 numbers and added to x.",
+  g_stream:    "<b>x after the block.</b> The residual stream: x + attention + MLP. This goes into the next block. Watch it change from block to block.",
+  g_output:    "<b>Output.</b> The last x is normalized and compared with the vector of every one of the 2048 tokens (same table as the embedding). The match = score (logit). Softmax turns the scores into probabilities; one token is drawn.",
   idle:      "Hover a layer to see what it does. Turn on Weights to see which connections carry the most signal for the current character.",
 };
 
@@ -401,6 +429,12 @@ function drawNetwork(step) {
   const sans = getComputedStyle(document.body).fontFamily;
   const mono = "JetBrains Mono, ui-monospace, Consolas, monospace";
   const top = step ? step.top : [];
+
+  if (layers.chat) {
+    drawGalaxyFlow(canvas, step, info);
+    $("networkLabel").textContent = formatParams(info.params);
+    return;
+  }
 
   if (layers.transformer) {
     drawTransformerView(context, step, info, colors, sans, mono);
@@ -927,6 +961,191 @@ function layerAt(x, y) {
   if (x < NET.logits - NET.logitsHalf - 20) return "hidden";
   return "logits";
 }
+// ---------------------------------------------------------------- Galaxy: the whole path of one token
+// From top to bottom, the way the newest token travels through the model:
+// input tokens -> embedding x -> 8 blocks (attention, then MLP, each ADDS to x) -> logits -> probabilities.
+// Every "strip" is one vector: each thin cell is one number (accent = positive, red = negative,
+// brighter = bigger). Columns of the attention grids line up with the input tokens on top.
+const GW = 560;                               // logical width; the height depends on the number of blocks
+const GF = { labelRight: 80, left: 92, right: 546, top: 26, chipsH: 26, embedY: 84, blocksY: 118,
+             blockH: 136, stripH: 10, headRowH: 6 };
+
+function galaxyHeight(blockCount) {
+  return GF.blocksY + blockCount * GF.blockH + 160;
+}
+
+// which part of the drawing is under the mouse (for the explanation under the canvas)
+function galaxyPartAt(y, blockCount) {
+  if (y < GF.top + GF.chipsH + 8) return "g_input";
+  if (y < GF.blocksY - 4) return "g_embedding";
+  const blockIndex = Math.floor((y - GF.blocksY) / GF.blockH);
+  if (blockIndex >= blockCount) return "g_output";
+  const inside = (y - GF.blocksY) - blockIndex * GF.blockH;
+  if (inside < 16) return "g_block";
+  if (inside < 70) return "g_heads";
+  if (inside < 84) return "g_attention";
+  if (inside < 98) return "g_neurons";
+  if (inside < 112) return "g_mlp";
+  return "g_stream";
+}
+
+function drawStrip(context, values, x, y, width, height, positive, negative) {
+  let biggest = 1e-6;
+  for (const value of values) biggest = Math.max(biggest, Math.abs(value));
+  const cell = width / values.length;
+  for (let i = 0; i < values.length; i++) {
+    const strength = Math.abs(values[i]) / biggest;
+    if (strength < 0.04) continue;
+    context.fillStyle = rgba(values[i] >= 0 ? positive : negative, 0.15 + 0.85 * strength);
+    context.fillRect(x + i * cell, y, Math.max(cell, 0.6), height);
+  }
+  context.strokeStyle = "rgba(128,128,128,0.18)";
+  context.lineWidth = 0.5;
+  context.strokeRect(x, y, width, height);
+}
+
+function drawGalaxyFlow(canvas, step, info) {
+  const data = step && step.galaxy;
+  const blockCount = data ? data.blocks.length : (info.layers.blocks || 8);
+  const height = galaxyHeight(blockCount);
+  const pixelRatio = window.devicePixelRatio || 1;
+  const pixelWidth = Math.round(canvas.clientWidth * pixelRatio);
+  const pixelHeight = Math.round(pixelWidth * height / GW);
+  if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+  if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
+  const context = canvas.getContext("2d");
+  context.setTransform(1, 0, 0, 1, 0, 0);
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.setTransform(pixelWidth / GW, 0, 0, pixelWidth / GW, 0, 0);
+
+  if (!netColors) networkColors();
+  const colors = netColors;
+  const sans = getComputedStyle(document.body).fontFamily;
+  const mono = "JetBrains Mono, ui-monospace, Consolas, monospace";
+  const positive = hexToRgb(colors.accent.startsWith("#") ? colors.accent : "#a9a5ff");
+  const negative = hexToRgb("#ff8a70");
+  const width = GF.right - GF.left;
+  context.textBaseline = "middle";
+
+  function label(text, y, strong) {
+    context.textAlign = "right";
+    context.font = (strong ? "500 11px " : "10.5px ") + sans;
+    context.fillStyle = strong ? colors.text : colors.muted;
+    context.fillText(text, GF.labelRight, y);
+    context.textAlign = "left";
+  }
+
+  if (!data) {
+    context.fillStyle = colors.muted;
+    context.font = "13px " + sans;
+    context.textAlign = "center";
+    context.fillText("Send a message to watch a token travel through Galaxy.", GW / 2, 60);
+    context.textAlign = "left";
+    return;
+  }
+
+  // the residual stream: one line from the embedding to the output, every block adds to it
+  context.strokeStyle = rgba(positive, 0.35);
+  context.lineWidth = 1.5;
+  line(context, GF.labelRight + 6, GF.embedY + GF.stripH / 2, GF.labelRight + 6, GF.blocksY + blockCount * GF.blockH + 14);
+
+  // ---- input tokens
+  const tokens = data.tokens;
+  const columnWidth = width / 12;
+  const firstColumn = GF.left + (12 - tokens.length) * columnWidth;      // newest token always on the right
+  label("input", GF.top + GF.chipsH / 2, true);
+  context.font = "10.5px " + mono;
+  context.textAlign = "center";
+  for (let c = 0; c < tokens.length; c++) {
+    const x = firstColumn + c * columnWidth;
+    const newest = c === tokens.length - 1;
+    context.fillStyle = newest ? rgba(positive, 0.22) : colors.surface;
+    context.beginPath(); context.roundRect(x + 1.5, GF.top, columnWidth - 3, GF.chipsH, 5); context.fill();
+    let text = visibleChar(tokens[c]);
+    if (text.length > 5) text = text.slice(0, 4) + "…";
+    context.fillStyle = newest ? colors.text : colors.muted;
+    context.fillText(text, x + columnWidth / 2, GF.top + GF.chipsH / 2);
+  }
+  context.textAlign = "left";
+
+  // ---- embedding
+  label("embedding", GF.embedY + GF.stripH / 2, true);
+  drawStrip(context, data.embedding, GF.left, GF.embedY, width, GF.stripH, positive, negative);
+  context.font = "10px " + sans;
+  context.fillStyle = colors.faint || colors.muted;
+  context.fillText("x = token vector + position vector  ·  " + data.embedding.length + " numbers", GF.left, GF.embedY + 22);
+
+  // ---- blocks
+  for (let b = 0; b < blockCount; b++) {
+    const block = data.blocks[b];
+    const top = GF.blocksY + b * GF.blockH;
+    context.font = "500 11.5px " + sans;
+    context.fillStyle = colors.text;
+    context.fillText("Block " + (b + 1), GF.left, top + 6);
+    context.textAlign = "right";
+    context.font = "10.5px " + sans;
+    context.fillStyle = colors.muted;
+    context.fillText("attention changed x by " + Math.round(block.attention_change * 100) + "%  ·  MLP by " +
+                     Math.round(block.mlp_change * 100) + "%", GF.right, top + 6);
+    context.textAlign = "left";
+
+    // attention: 8 heads (rows) x the input tokens (columns, same as on top)
+    label("8 heads", top + 16 + (block.heads.length * GF.headRowH) / 2);
+    for (let h = 0; h < block.heads.length; h++) {
+      const row = block.heads[h];
+      const rowFirst = GF.left + (12 - row.length) * columnWidth;
+      for (let c = 0; c < row.length; c++) {
+        context.fillStyle = rgba(positive, 0.05 + 0.95 * Math.sqrt(row[c]));
+        context.fillRect(rowFirst + c * columnWidth + 1.5, top + 16 + h * GF.headRowH, columnWidth - 3, GF.headRowH - 1);
+      }
+    }
+    const stripsTop = top + 16 + block.heads.length * GF.headRowH + 8;
+    const strips = [["attention adds", block.attention], ["MLP neurons", block.neurons], ["MLP adds", block.mlp], ["x after", block.stream]];
+    for (let i = 0; i < strips.length; i++) {
+      const y = stripsTop + i * 14;
+      label(strips[i][0], y + GF.stripH / 2, i === 3);
+      drawStrip(context, strips[i][1], GF.left, y, width, GF.stripH, positive, negative);
+    }
+    // a dot on the stream line: here the block added its result to x
+    context.fillStyle = colors.accent;
+    context.beginPath(); context.arc(GF.labelRight + 6, stripsTop + 3 * 14 + GF.stripH / 2, 2.5, 0, 6.29); context.fill();
+  }
+
+  // ---- output: matching x with every token, then softmax
+  const outTop = GF.blocksY + blockCount * GF.blockH + 10;
+  label("output", outTop + 6, true);
+  context.font = "10.5px " + sans;
+  context.fillStyle = colors.muted;
+  context.fillText("final LayerNorm · x compared with all 2048 token vectors (logits) · softmax", GF.left, outTop + 6);
+  const top5 = step.top || [];
+  for (let i = 0; i < top5.length; i++) {
+    const y = outTop + 24 + i * 24;
+    const [token, probability] = top5[i];
+    const picked = token === step.char;
+    context.fillStyle = picked ? rgba(positive, 0.22) : colors.surface;
+    context.beginPath(); context.roundRect(GF.left, y, 92, 18, 5); context.fill();
+    context.font = "11px " + mono;
+    context.fillStyle = picked ? colors.text : colors.muted;
+    let text = visibleChar(token);
+    if (text.length > 11) text = text.slice(0, 10) + "…";
+    context.fillText(text, GF.left + 7, y + 9);
+    context.font = "10.5px " + mono;
+    context.fillStyle = colors.muted;
+    const score = step.scores ? step.scores[i].toFixed(1) : "";
+    context.fillText("score " + score, GF.left + 102, y + 9);
+    const barLeft = GF.left + 186, barWidth = width - 186 - 46;
+    context.fillStyle = colors.surface;
+    context.fillRect(barLeft, y + 6, barWidth, 6);
+    context.fillStyle = picked ? colors.accent : rgba(positive, 0.5);
+    context.fillRect(barLeft, y + 6, barWidth * probability, 6);
+    context.textAlign = "right";
+    context.fillStyle = colors.text;
+    context.fillText((probability * 100).toFixed(1) + "%", GF.right, y + 9);
+    context.textAlign = "left";
+  }
+  context.textBaseline = "alphabetic";
+}
+
 function showLayerNote(name) { $("layerNote").innerHTML = LAYER_INFO[name]; }
 
 $("network").addEventListener("mousemove", (event) => {
@@ -937,11 +1156,18 @@ $("network").addEventListener("mousemove", (event) => {
     showLayerNote(transformerPartAt(event.offsetX * scale, event.offsetY * scale, info).name);
     return;
   }
+  if (info && info.layers && info.layers.chat) {
+    const step = state.lastStep;
+    const blockCount = step && step.galaxy ? step.galaxy.blocks.length : 8;
+    showLayerNote(galaxyPartAt(event.offsetY * GW / canvas.clientWidth, blockCount));
+    return;
+  }
   showLayerNote(layerAt(event.offsetX * scale, event.offsetY * scale));
 });
 // Pulsar: click a block to see its attention on top
 $("network").addEventListener("click", (event) => {
   const info = state.available[state.current];
+  if (info && info.layers && info.layers.chat) return;
   if (!info || !info.layers || !info.layers.transformer) return;
   const scale = NET_W / $("network").clientWidth;
   const part = transformerPartAt(event.offsetX * scale, event.offsetY * scale, info);
@@ -1026,6 +1252,7 @@ function addBotMessage(prompt) {
   const echo = document.createElement("span");
   echo.className = "echo";
   echo.textContent = prompt.length > 28 ? "…" + prompt.slice(-28) : prompt;
+  if (isChatModel(state.current)) echo.textContent = "";   // a chat model answers, it does not continue your text
   const caret = document.createElement("span");
   caret.className = "caret";
   text.append(echo, caret);
@@ -1126,6 +1353,14 @@ function updateSendButton() {
 
 async function send(prompt) {
   if (!state.current) return;
+  const chat = ensureChat(prompt);
+  const history = [];                              // what was said before in this chat (chat models read it)
+  for (const turn of chat.messages) history.push({ role: turn.role, text: turn.text });
+  chat.messages.push({ role: "user", text: prompt });
+  chat.model = state.current;
+  chat.updated = Date.now();
+  saveChats();
+  renderChatList();
   const empty = $("emptyState");
   if (empty) empty.remove();
 
@@ -1228,6 +1463,8 @@ async function send(prompt) {
       body: JSON.stringify({
         model: state.current,
         prompt: prompt,
+        history: isChatModel(state.current) ? history : [],
+        visualize: panelOpen(),                              // the inside of Galaxy is only sent when you can see it
         temperature: parseFloat($("temperature").value),
         max_chars: lengthValue >= 850 ? 0 : lengthValue,   // 0 = auto
         delay_ms: 0,                                         // the page sets the speed, see pump()
@@ -1274,7 +1511,7 @@ async function send(prompt) {
             removeLastCharacters(bot, toRemove);
             count -= Math.min(count, toRemove);
           }
-          ending = "Ended the story on its own.";
+          ending = isChatModel(state.current) ? "Finished its reply." : "Ended the story on its own.";
         }
       }
     }
@@ -1292,7 +1529,7 @@ async function send(prompt) {
   stepOnce = null;
   setPaused(false);
 
-  if (ending === "Ended the story on its own." && !controller.signal.aborted) {
+  if ((ending === "Ended the story on its own." || ending === "Finished its reply.") && !controller.signal.aborted) {
     $("chosenChar").textContent = "■";
     $("chosenProb").textContent = "End";
     $("chosenNote").textContent = "the model wrote <|endoftext|>";
@@ -1302,6 +1539,19 @@ async function send(prompt) {
   showStats(count, confidenceSum, startTime, ending);
 
   bot.caret.remove();
+  // save the reply in the chat (without the faded echo of the prompt)
+  const echo = bot.text.querySelector(".echo");
+  const replyText = bot.text.textContent.slice(echo ? echo.textContent.length : 0);
+  // keep the confidence colors: [text, level] pieces (plain text = sure, p4)
+  const pieces = [];
+  for (const node of bot.text.childNodes) {
+    if (node === echo) continue;
+    if (node.nodeType === Node.TEXT_NODE) pieces.push([node.data, "p4"]);
+    else if (node.dataset && node.dataset.level) pieces.push([node.textContent, node.dataset.level]);
+  }
+  chat.messages.push({ role: "bot", text: replyText, pieces: pieces, model: state.current });
+  chat.updated = Date.now();
+  saveChats();
   bot.avatar.classList.remove("thinking");
   bot.message.classList.add("done");             // off-screen finished replies are skipped when drawing
   state.controller = null;
@@ -1339,14 +1589,15 @@ $("input").addEventListener("keydown", (event) => {
 $("input").addEventListener("input", () => { autoGrow(); updateSendButton(); });
 $("messages").addEventListener("scroll", onMessagesScroll, { passive: true });
 
-for (const chip of document.querySelectorAll(".chip")) {
-  chip.addEventListener("click", () => {
-    $("input").value = chip.textContent;
-    autoGrow();
-    updateSendButton();
-    $("composer").requestSubmit();
-  });
-}
+// suggestion chips (the empty screen can be rebuilt, so listen on the parent)
+$("messages").addEventListener("click", (event) => {
+  const chip = event.target.closest(".chip");
+  if (!chip || state.generating) return;
+  $("input").value = chip.textContent;
+  autoGrow();
+  updateSendButton();
+  $("composer").requestSubmit();
+});
 
 $("modelButton").addEventListener("click", (event) => {
   event.stopPropagation();
@@ -1796,8 +2047,8 @@ function drawSparks(context, delta) {
       x = spark.x; y = spark.y;
     }
     if (trail.soft) {
-      glow(context, x, y, spark.size * 3.5, color, 0.6 * fade);
-      context.fillStyle = rgba(color, 0.55 * fade);             // a small bright core so it shows on the purple sky
+      glow(context, x, y, spark.size * 3.5, color, 0.8 * fade);
+      context.fillStyle = rgba(color, 0.75 * fade);             // a small bright core so it shows on the purple sky
       context.beginPath(); context.arc(x, y, spark.size * 0.45, 0, 6.28); context.fill();
     } else if (trail.star) {
       context.strokeStyle = rgba(color, 0.85 * fade);
@@ -1853,3 +2104,175 @@ function startCosmos() {
   requestAnimationFrame(cosmosLoop);
 }
 startCosmos();
+
+
+// ---------------------------------------------------------------- saved chats
+// Every chat is kept in this browser (localStorage), so it is still there after closing the page.
+// chat = { id, title, updated, messages: [{ role: "user" | "bot", text, model }] }
+const CHATS_KEY = "alexgpt-chats";
+const EMPTY_STATE_HTML = $("emptyState").outerHTML;   // to rebuild the welcome screen for a new chat
+let chats = [];
+let currentChatId = null;
+
+function loadChats() {
+  try { chats = JSON.parse(localStorage.getItem(CHATS_KEY)) || []; } catch (e) { chats = []; }
+}
+function saveChats() {
+  try { localStorage.setItem(CHATS_KEY, JSON.stringify(chats)); } catch (e) { /* storage full or blocked */ }
+  savePreference("alexgpt-current-chat", currentChatId || "");
+}
+function findChat(id) {
+  for (const chat of chats) if (chat.id === id) return chat;
+  return null;
+}
+
+// the chat we are writing in; a new one starts with the first message
+function ensureChat(firstMessage) {
+  let chat = findChat(currentChatId);
+  if (!chat) {
+    chat = { id: Date.now().toString(36), title: firstMessage.slice(0, 48), updated: Date.now(), messages: [] };
+    chats.push(chat);
+    currentChatId = chat.id;
+  }
+  return chat;
+}
+
+function renderChatList() {
+  const list = $("chatList");
+  list.innerHTML = "";
+  const sorted = chats.slice().sort((a, b) => b.updated - a.updated);
+  if (sorted.length === 0) {
+    const note = document.createElement("div");
+    note.className = "empty-note";
+    note.textContent = "No chats yet";
+    list.append(note);
+    return;
+  }
+  for (const chat of sorted) {
+    const row = document.createElement("div");           // a div, not a button: typing a space while renaming must not click it
+    row.className = "chat-row" + (chat.id === currentChatId ? " active" : "");
+    row.setAttribute("role", "button");
+    row.tabIndex = 0;
+    const title = document.createElement("span");
+    title.className = "chat-title";
+    title.textContent = chat.title || "Untitled";
+    const remove = document.createElement("span");
+    remove.className = "chat-delete";
+    remove.title = "Delete chat";
+    remove.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>';
+    remove.addEventListener("click", (event) => {
+      event.stopPropagation();
+      if (state.generating) return;
+      chats = chats.filter((other) => other.id !== chat.id);
+      if (chat.id === currentChatId) openChat(null);
+      saveChats();
+      renderChatList();
+    });
+    const rename = document.createElement("span");
+    rename.className = "chat-delete";
+    rename.title = "Rename chat";
+    rename.innerHTML = '<svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M2 10l.6-2.4L8.2 2a1 1 0 0 1 1.4 0l.4.4a1 1 0 0 1 0 1.4L4.4 9.4Z" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>';
+    rename.addEventListener("click", (event) => { event.stopPropagation(); startRename(chat, title); });
+    title.addEventListener("dblclick", (event) => { event.stopPropagation(); startRename(chat, title); });
+    row.append(title, rename, remove);
+    row.addEventListener("click", () => { if (!state.generating) openChat(chat.id); });
+    list.append(row);
+  }
+}
+
+// a saved reply, drawn without animation, in the color of the model that wrote it
+function addStoredBotMessage(turn) {
+  const model = turn.model || state.current;
+  const message = document.createElement("div");
+  message.className = "message bot done";
+  message.dataset.model = model;
+  message.style.setProperty("--accent", modelColor(model));
+  const avatar = document.createElement("div");
+  avatar.className = "bot-avatar";
+  avatar.append(makeIcon(model, 16));
+  const body = document.createElement("div");
+  body.className = "bot-body";
+  const meta = document.createElement("div");
+  meta.className = "bot-meta";
+  meta.textContent = model;
+  const text = document.createElement("div");
+  text.className = "bot-text";
+  if (turn.pieces) {
+    for (const [pieceText, level] of turn.pieces) {
+      if (level === "p4") { text.append(document.createTextNode(pieceText)); continue; }
+      const span = document.createElement("span");
+      span.className = "tok settled " + level;
+      span.dataset.level = level;
+      span.textContent = pieceText;
+      text.append(span);
+    }
+  } else {
+    text.textContent = turn.text;
+  }
+  body.append(meta, text);
+  message.append(avatar, body);
+  $("messages").append(message);
+}
+
+// id = null opens an empty new chat
+function openChat(id) {
+  currentChatId = id;
+  const box = $("messages");
+  box.innerHTML = "";
+  const chat = findChat(id);
+  // switch to the model this chat was using
+  if (chat && chat.model && state.available[chat.model] && chat.model !== state.current) selectModel(chat.model);
+  if (!chat) {
+    box.innerHTML = EMPTY_STATE_HTML;
+    if (state.current) $("emptyIcon").append(makeIcon(state.current, 46));
+  } else {
+    for (const turn of chat.messages) {
+      if (turn.role === "user") addUserMessage(turn.text);
+      else addStoredBotMessage(turn);
+    }
+    scrollToBottom(true);
+  }
+  savePreference("alexgpt-current-chat", currentChatId || "");
+  renderChatList();
+}
+
+$("newChatButton").addEventListener("click", () => { if (!state.generating) openChat(null); });
+$("chatsToggle").addEventListener("click", () => {
+  const open = $("chatsPanel").classList.toggle("open");
+  $("chatsToggle").classList.toggle("active", open);
+  savePreference("alexgpt-chats-panel", open ? "open" : "closed");
+});
+if (loadPreference("alexgpt-chats-panel") === "open") {
+  $("chatsPanel").classList.add("open");
+  $("chatsToggle").classList.add("active");
+}
+
+loadChats();
+const lastChat = loadPreference("alexgpt-current-chat");
+if (lastChat && findChat(lastChat)) openChat(lastChat);
+else renderChatList();
+
+// rename in place: the title becomes a text box; Enter or clicking away saves, Escape cancels
+function startRename(chat, titleElement) {
+  const input = document.createElement("input");
+  input.className = "chat-rename";
+  input.value = chat.title || "";
+  titleElement.replaceWith(input);
+  input.focus();
+  input.select();
+  let done = false;
+  function finish(save) {
+    if (done) return;
+    done = true;
+    const newTitle = input.value.trim();
+    if (save && newTitle) { chat.title = newTitle; saveChats(); }
+    renderChatList();
+  }
+  input.addEventListener("click", (event) => event.stopPropagation());
+  input.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === "Enter") finish(true);
+    if (event.key === "Escape") finish(false);
+  });
+  input.addEventListener("blur", () => finish(true));
+}
