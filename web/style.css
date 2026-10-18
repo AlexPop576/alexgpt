@@ -416,7 +416,39 @@ body.resizing-panel, body.resizing-panel * { cursor: ew-resize !important; }
 
 .control { display: grid; grid-template-columns: 96px 1fr 46px; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); margin-bottom: 12px; }
 .control .value { text-align: right; color: var(--text); font-variant-numeric: tabular-nums; }
-input[type="range"] { width: 100%; accent-color: var(--accent); }
+/* sliders: thin track, colored up to the knob, round knob */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 18px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+}
+input[type="range"]::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(to right, var(--accent) var(--fill, 50%), var(--surface-2) var(--fill, 50%));
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 14px;
+  height: 14px;
+  margin-top: -5px;
+  border: none;
+  border-radius: 50%;
+  background: var(--text);
+  box-shadow: 0 0 0 3px var(--surface);
+  transition: transform 0.12s;
+}
+input[type="range"]:hover::-webkit-slider-thumb { transform: scale(1.15); }
+input[type="range"]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--surface-2); }
+input[type="range"]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--accent); }
+input[type="range"]::-moz-range-thumb { width: 14px; height: 14px; border: none; border-radius: 50%; background: var(--text); }
+input[type="range"]:disabled { cursor: default; opacity: 0.4; }
+input[type="range"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; border-radius: 4px; }
+.model-button:disabled { opacity: 0.5; cursor: default; }
 
 .switch-row { grid-template-columns: 1fr auto; cursor: pointer; margin-top: 4px; margin-bottom: 8px; }
 .switch { position: relative; width: 34px; height: 20px; }
@@ -449,6 +481,132 @@ input[type="range"] { width: 100%; accent-color: var(--accent); }
 @keyframes blink { 50% { opacity: 0; } }
 @keyframes breathe { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.45; transform: scale(0.85); } }
 @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+
+/* ================================================================ COSMOS THEME */
+
+/* the animated universe behind everything (drawn by app.js) */
+.cosmos {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.95;
+  transition: opacity 0.35s ease;
+}
+[data-theme="light"] .cosmos { opacity: 0.75; }
+.cosmos.switching { opacity: 0; }
+
+/* a faint glow of the current model's color, from the top right corner */
+body {
+  background:
+    radial-gradient(ellipse 70% 55% at 85% 0%, color-mix(in srgb, var(--accent) 11%, transparent), transparent 70%),
+    var(--bg);
+}
+.app { position: relative; z-index: 1; }
+
+/* glass: the bars and the composer let the universe show through, blurred */
+.topbar {
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.composer-box {
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: border-color 0.2s, box-shadow 0.3s;
+}
+.composer-box:focus-within {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  box-shadow: 0 12px 44px -16px color-mix(in srgb, var(--accent) 70%, transparent);
+}
+.inside { background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
+.chip { background: color-mix(in srgb, var(--surface) 75%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+.chip:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+.user-bubble { background: color-mix(in srgb, var(--surface-2) 85%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+
+/* the message box has a thin ring of light that travels around it, like something in orbit;
+   it moves faster and glows brighter while the model is writing */
+@property --orbit-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+.composer-box { position: relative; }
+.composer-box::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  padding: 1px;
+  border-radius: inherit;
+  background: conic-gradient(from var(--orbit-angle),
+    transparent 0deg,
+    color-mix(in srgb, var(--accent) 85%, transparent) 50deg,
+    transparent 110deg,
+    transparent 180deg,
+    color-mix(in srgb, var(--accent) 45%, transparent) 230deg,
+    transparent 290deg);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.45;
+  pointer-events: none;
+  animation: orbit 9s linear infinite;
+  transition: opacity 0.4s;
+}
+.composer-box:focus-within::before { opacity: 0.75; }
+.composer.writing .composer-box::before { opacity: 1; animation-duration: 2.6s; }
+@keyframes orbit { to { --orbit-angle: 360deg; } }
+
+/* brand: AlexGPT + a small "Cosmos" tag in the model's color */
+.brand-tag {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  transition: color 0.4s, border-color 0.4s;
+}
+
+/* the big icon on the empty screen glows in the model's color */
+.empty-icon .model-icon {
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--accent) 65%, transparent));
+  animation: icon-pop 0.6s cubic-bezier(0.2, 1.5, 0.4, 1), float 4s 0.6s ease-in-out infinite;
+}
+.empty h1 { transition: color 0.4s; }
+
+/* the icon in the model button pops when you switch models */
+#modelIcon { animation: icon-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
+
+/* the avatar glows while the model is thinking */
+.bot-avatar { transition: box-shadow 0.4s, border-color 0.4s; }
+.bot-avatar.thinking {
+  border-color: color-mix(in srgb, var(--accent) 60%, var(--border));
+  box-shadow: 0 0 18px -2px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.bot-avatar.thinking .model-icon { animation: none; }
+.bot-meta { color: color-mix(in srgb, var(--accent) 70%, var(--text-muted)); }
+
+/* every model moves in its own way (empty screen icon + thinking avatar) */
+[data-model="Spark"] .empty-icon svg, [data-model="Spark"] .bot-avatar.thinking svg { animation: spark-twinkle 1.6s ease-in-out infinite; }
+[data-model="Nebula"] .empty-icon svg, [data-model="Nebula"] .bot-avatar.thinking svg { animation: nebula-drift 3.2s ease-in-out infinite; }
+[data-model="Pulsar"] .empty-icon svg { animation: spin 5s linear infinite; }
+[data-model="Pulsar"] .bot-avatar.thinking svg { animation: spin 1.4s linear infinite; }
+[data-model="Galaxy"] .empty-icon svg { animation: spin-back 14s linear infinite; }
+[data-model="Galaxy"] .bot-avatar.thinking svg { animation: spin-back 3s linear infinite; }
+[data-model="Supernova"] .empty-icon svg, [data-model="Supernova"] .bot-avatar.thinking svg { animation: supernova-burst 2.4s ease-out infinite; }
+[data-model="Singularity"] .empty-icon svg, [data-model="Singularity"] .bot-avatar.thinking svg { animation: singularity-pull 3s ease-in-out infinite; }
+
+@keyframes icon-pop { 0% { transform: scale(0.4) rotate(-20deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes spark-twinkle { 0%, 100% { transform: scale(1) rotate(0); } 45% { transform: scale(1.22) rotate(15deg); filter: brightness(1.5); } }
+@keyframes nebula-drift { 0%, 100% { transform: translate(0, 0) scale(1); } 50% { transform: translate(1.5px, -2px) scale(1.07); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+@keyframes spin-back { to { transform: rotate(-360deg); } }
+@keyframes supernova-burst { 0% { transform: scale(0.85); } 18% { transform: scale(1.25); filter: brightness(1.6); } 100% { transform: scale(0.85); } }
+@keyframes singularity-pull { 0%, 100% { transform: scale(1) rotate(0); } 50% { transform: scale(0.86) rotate(-8deg); } }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }

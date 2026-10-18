@@ -18,7 +18,7 @@ import numpy as np
 # Models
 # ---------------------------------------------------------------------------
 
-class PebbleBigram:
+class SparkBigram:
     """Stage 1: counts which character follows which. Sees 1 character."""
 
     def __init__(self, path):
@@ -38,7 +38,7 @@ class PebbleBigram:
         return {}
 
 
-class SlateMLP:
+class NebulaMLP:
     """Stage 3: embedding + one hidden layer. Sees the last 8 characters."""
 
     def __init__(self, path):
@@ -148,7 +148,7 @@ def embed_with_positions(ids, token_table, position_table):
         x[i] = token_table[ids[i]] + position_table[i]
     return x
 
-class QuartzTransformer:
+class PulsarTransformer:
     """Stage 4: a small Transformer. Attention + MLP blocks, sees the last 32 characters."""
 
     def __init__(self, path):
@@ -203,9 +203,9 @@ class QuartzTransformer:
 
 # name -> (class, checkpoint file, short description)
 MODEL_REGISTRY = {
-    "Pebble": (PebbleBigram, "checkpoints/pebble.npz", "Bigram · sees 1 character"),
-    "Slate":  (SlateMLP,     "checkpoints/slate.npz",  "MLP · sees 8 characters"),
-    "Quartz": (QuartzTransformer, "checkpoints/quartz.npz", "Transformer · 3 blocks · sees 32 characters"),
+    "Spark":  (SparkBigram, "checkpoints/spark.npz", "Bigram · sees 1 character"),
+    "Nebula": (NebulaMLP,   "checkpoints/nebula.npz", "MLP · sees 8 characters"),
+    "Pulsar": (PulsarTransformer, "checkpoints/pulsar.npz", "Transformer · 3 blocks · sees 32 characters"),
 }
 
 
@@ -228,6 +228,18 @@ def load_models(project_root):
 # ---------------------------------------------------------------------------
 
 END_OF_STORY = "<|endoftext|>"
+
+
+def broken_marker_length(text):
+    """How many characters at the end of text are a damaged <|endoftext|> (0 = none)."""
+    if not text.endswith("|>"):
+        return 0
+    tail = text[-16:]
+    for piece in ("<|", "<", "endof", "ndof", "dof", "text|>", "ext|>"):
+        position = tail.rfind(piece)
+        if position >= 0:
+            return len(tail) - position
+    return 2          # just "|>" (Spark writes it after any letter): drop those 2 and stop
 
 
 def rounded(values):
@@ -325,4 +337,10 @@ def generate_stream(model, prompt, max_chars, temperature, rng):
 
         if generated_text.endswith(END_OF_STORY):
             yield {"type": "end_of_story"}
+            return
+        # small models sometimes write the marker a bit wrong ("endoftext|>", "<|endofext|>"):
+        # if the text ends with "|>" and a piece of the marker is near, treat it as the end too
+        broken = broken_marker_length(generated_text)
+        if broken > 0:
+            yield {"type": "end_of_story", "remove": broken}
             return

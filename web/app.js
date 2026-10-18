@@ -2,22 +2,28 @@
 
 // Small line icons, one per model (18x18, drawn with strokes).
 const ICONS = {
-  Pebble:   '<path d="M3.5 11.2c0-3.6 2.9-6.2 6.3-6.2 3 0 5 1.9 5 4.6 0 3.1-2.6 5.4-6.1 5.4-3 0-5.2-1.4-5.2-3.8Z"/><path d="M7.2 8.3c.7-.6 1.6-.9 2.5-.9"/>',
-  Slate:    '<path d="M2.5 7.5L9 4.5l6.5 3L9 10.5Z"/><path d="M2.5 10.5L9 13.5l6.5-3"/>',
-  Quartz:   '<path d="M9 1.8l3 3.2v8.2l-3 3-3-3V5Z"/><path d="M6 5l3 1.6L12 5"/><path d="M9 6.6v9.6"/>',
-  Prism:    '<path d="M8.5 3.5l5.5 10H3Z"/><path d="M1 10.2l4.6-1.3"/><path d="M11.4 8.6l5-1.6M11.9 9.8l4.8.2M12.4 11l4.3 1.6"/>',
-  Sapphire: '<ellipse cx="9" cy="9" rx="5.5" ry="7"/><path d="M9 2L6.2 9 9 16l2.8-7Z"/><path d="M3.5 9h11"/>',
-  Diamond:  '<path d="M5 3.5h8l3 4L9 15.5 2 7.5Z"/><path d="M2 7.5h14"/><path d="M5 3.5l2 4 2 8 2-8 2-4"/>',
+  // a four-point star with a small sparkle next to it
+  Spark:       '<path d="M8.4 2.2c.5 3.6 2.6 5.7 6.2 6.2-3.6.5-5.7 2.6-6.2 6.2-.5-3.6-2.6-5.7-6.2-6.2 3.6-.5 5.7-2.6 6.2-6.2Z" fill="currentColor" fill-opacity=".18"/><path d="M14.6 1.6v3M13.1 3.1h3"/>',
+  // a cloud of gas curling into itself, with two young stars
+  Nebula:      '<path d="M2.6 11.6C2.4 8.1 5.1 5.4 8.5 5.4c2.7 0 4.8 1.8 4.8 4.2 0 1.9-1.5 3.4-3.4 3.4-1.6 0-2.8-1.1-2.8-2.5 0-1.1.9-1.9 1.9-1.9"/><path d="M2.2 14.6c2.3 1.3 5.2 1.6 7.9 1 2.6-.6 4.7-2.2 6-4.3"/><circle cx="14.6" cy="4.2" r=".9" fill="currentColor" stroke="none"/><circle cx="4.2" cy="3.8" r=".6" fill="currentColor" stroke="none"/>',
+  // a spinning star with two beams and its tilted orbit
+  Pulsar:      '<path d="M9 9L14.8 1.8M9 9L3.2 16.2"/><path d="M11.6 5.8l3.8-1.6-1.1-2.3M6.4 12.2l-3.8 1.6 1.1 2.3" stroke-opacity=".5"/><ellipse cx="9" cy="9" rx="7" ry="2.3" stroke-opacity=".55"/><circle cx="9" cy="9" r="2.2" fill="currentColor" stroke="none"/>',
+  // a spiral galaxy with two arms around a bright core
+  Galaxy:      '<path d="M9 9c1.5-1.7 4.3-1.4 5.4.6 1.3 2.3-.2 5.2-2.9 5.6"/><path d="M9 9c-1.5 1.7-4.3 1.4-5.4-.6-1.3-2.3.2-5.2 2.9-5.6"/><circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.2" cy="3.4" r=".6" fill="currentColor" stroke="none"/><circle cx="2.8" cy="14.6" r=".6" fill="currentColor" stroke="none"/>',
+  // an exploding star: bright core, shock wave, flying rays
+  Supernova:   '<circle cx="9" cy="9" r="2.3" fill="currentColor" fill-opacity=".35"/><circle cx="9" cy="9" r="5" stroke-dasharray="1.4 1.9"/><path d="M9 .8v2M9 15.2v2M.8 9h2M15.2 9h2M3.2 3.2l1.4 1.4M13.4 13.4l1.4 1.4M3.2 14.8l1.4-1.4M13.4 4.6l1.4-1.4"/>',
+  // a black hole: a dark centre, its bright edge, and the disc of matter crossing in front
+  Singularity: '<path d="M1.4 9.4c.4-1.6 3.7-2.9 7.6-2.9s7.2 1.3 7.6 2.9" stroke-opacity=".55"/><circle cx="9" cy="9" r="3.4" style="fill: var(--bg)"/><path d="M1.4 9.4c.4 1.6 3.7 2.9 7.6 2.9s7.2-1.3 7.6-2.9"/>',
 };
 
 // The full family. Models the server has loaded become selectable; the rest show as "soon".
 const FAMILY = [
-  { name: "Pebble",   dark: "#b5b3aa", light: "#7a776d", note: "Bigram · sees 1 character" },
-  { name: "Slate",    dark: "#9db6d6", light: "#4f6788", note: "MLP · sees 8 characters" },
-  { name: "Quartz",   dark: "#e2c4ef", light: "#9a5fb5", note: "Attention" },
-  { name: "Prism",    dark: "#c9a7ff", light: "#7b55d6", note: "Transformer" },
-  { name: "Sapphire", dark: "#6f9bf0", light: "#2f5fc4", note: "Trained on the GPU" },
-  { name: "Diamond",  dark: "#bfe6ff", light: "#3b8fc2", note: "Flagship" },
+  { name: "Spark",       dark: "#f3c969", light: "#a8741a", note: "Bigram · sees 1 character" },
+  { name: "Nebula",      dark: "#e9a6dc", light: "#a1408c", note: "MLP · sees 8 characters" },
+  { name: "Pulsar",      dark: "#7fd8ea", light: "#1d8199", note: "Transformer · sees 32 characters" },
+  { name: "Galaxy",      dark: "#a9a5ff", light: "#5650d4", note: "GPU · BPE · conversations" },
+  { name: "Supernova",   dark: "#ff9d6e", light: "#cc5326", note: "Knows things" },
+  { name: "Singularity", dark: "#e6e3ff", light: "#2c2548", note: "Answers your questions" },
 ];
 
 const state = {
@@ -52,7 +58,7 @@ function makeIcon(name, size) {
   const span = document.createElement("span");
   span.className = "model-icon";
   span.dataset.model = name;
-  const paths = ICONS[name] || ICONS.Diamond;
+  const paths = ICONS[name] || ICONS.Singularity;
   span.innerHTML =
     '<svg width="' + size + '" height="' + size + '" viewBox="0 0 18 18" fill="none" stroke="currentColor" ' +
     'stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
@@ -198,6 +204,8 @@ function selectModel(name) {
   }
 
   document.documentElement.style.setProperty("--accent", modelColor(name));
+  document.documentElement.dataset.model = name;          // lets the CSS give every model its own animations
+  setCosmosModel(name);
 
   $("contextLabel").textContent = info.context_size + (info.context_size === 1 ? " character" : " characters");
   buildContextChips(info.context_size);
@@ -205,6 +213,10 @@ function selectModel(name) {
   updateSendButton();
   state.lastStep = null;
   netColors = null;                 // the accent color changed
+  attentionBlock = null;
+  // the Weights switch only means something for Nebula's network
+  const hasWeights = info.layers && info.layers.hidden > 0 && !info.layers.transformer;
+  $("weightsToggle").closest("label").style.visibility = hasWeights ? "visible" : "hidden";
   drawNetwork(null);
 }
 
@@ -215,7 +227,10 @@ function setTheme(newTheme) {
   savePreference("alexgpt-theme", newTheme);
   recolorIcons();
   if (state.current) document.documentElement.style.setProperty("--accent", modelColor(state.current));
-  netColors = null;                 // read the new theme's colors on the next draw
+  for (const message of document.querySelectorAll(".message.bot[data-model]"))
+    message.style.setProperty("--accent", modelColor(message.dataset.model));
+  netColors = null;                // read the new theme's colors on the next draw
+  if (state.current) setCosmosModel(state.current);
   drawNetwork(state.lastStep);
 }
 
@@ -305,8 +320,10 @@ const LAYER_INFO = {
   hidden:    "<b>tanh → h.</b> Same neurons, same positions as on the left, squashed between −1 and 1. Compare the two blocks: big values saturate to full blue or full orange.",
   logits:    "<b>Logits: h · W2 + b2.</b> The matching step. Each character has a template (its column of W2); its score is the dot product between h and that template. Bars to the right are positive scores.",
   output:    "<b>Softmax → probabilities.</b> exp(score / temperature), divided by the total. Only the differences between scores matter: 1.4 points ahead at temperature 0.7 means e^(1.4/0.7) ≈ 7× more likely. The ringed character was drawn at random.",
-  attention: "<b>Attention.</b> The newest character compares its query with the key of every character before it (dot product), softmax turns the scores into shares, and it collects a weighted mix of their values. Thicker arc = bigger share. Quartz is untrained for now, so the shares are still random.",
-  table:     "<b>Count table.</b> Pebble has no neurons: it reads the row of the previous character from its table of counts.",
+  attention: "<b>Attention.</b> The newest character compares its query with the key of every character before it (dot product), softmax turns the scores into shares, and it collects a weighted mix of their values. Thicker arc = bigger share. ",
+  embeddingTr: "<b>Embedding + position.</b> The newest character's vector (64 numbers) when it enters the model: its row from the character table plus the row of its position.",
+  block:     "<b>Transformer block.</b> The line on top is the residual stream: the newest character's vector, passed from block to block. Attention collects information from the characters before and adds it to the vector (first +), then the MLP thinks about it and adds its result (second +). The bars show how much each part changed the vector. Click a block to see its attention on top.",
+  table:     "<b>Count table.</b> Spark has no neurons: it reads the row of the previous character from its table of counts.",
   loss:      "<b>Loss, only during training.</b> −log of the probability given to the real next character. When chatting there is no right answer, so there is no loss.",
   idle:      "Hover a layer to see what it does. Turn on Weights to see which connections carry the most signal for the current character.",
 };
@@ -384,6 +401,12 @@ function drawNetwork(step) {
   const sans = getComputedStyle(document.body).fontFamily;
   const mono = "JetBrains Mono, ui-monospace, Consolas, monospace";
   const top = step ? step.top : [];
+
+  if (layers.transformer) {
+    drawTransformerView(context, step, info, colors, sans, mono);
+    $("networkLabel").textContent = formatParams(info.params);
+    return;
+  }
 
   if (layers.attention) {
     drawAttentionView(context, step, info, colors, sans, mono);
@@ -466,7 +489,7 @@ function drawNetwork(step) {
       for (let k = 0; k < top.length; k++) line(context, NET.logits + NET.logitsHalf + 34, outputY[k], NET.output - 19, outputY[k]);
     }
   } else if (step) {
-    // Pebble: the previous character points straight at the probabilities
+    // Spark: the previous character points straight at the probabilities
     context.strokeStyle = colors.accent;
     for (let k = 0; k < top.length; k++) {
       context.globalAlpha = 0.15 + 0.85 * top[k][1];
@@ -556,7 +579,7 @@ function drawNetwork(step) {
 
 
 // output column (softmax) and the dashed loss box, shared by every model
-function drawOutputs(context, step, info, colors, sans, mono, outputY) {
+function drawOutputs(context, step, info, colors, sans, mono, outputY, moreY = NET_BOTTOM - 6, lossY = 384) {
   const top = step ? step.top : [];
   context.textAlign = "center";
   context.textBaseline = "middle";
@@ -584,20 +607,20 @@ function drawOutputs(context, step, info, colors, sans, mono, outputY) {
   }
   context.fillStyle = colors.faint;
   context.font = "400 14px " + sans;
-  context.fillText("+" + Math.max(0, info.vocab_size - 5) + " more", NET.output + 16, NET_BOTTOM - 6);
+  context.fillText("+" + Math.max(0, info.vocab_size - 5) + " more", NET.output + 16, moreY);
 
   // loss: dashed, because it only exists during training
   context.setLineDash([5, 5]);
   context.strokeStyle = colors.faint;
   context.lineWidth = 1.5;
-  context.beginPath(); context.roundRect(NET.output - 50, 384, 128, 34, 10); context.stroke();
+  context.beginPath(); context.roundRect(NET.output - 50, lossY, 128, 34, 10); context.stroke();
   context.setLineDash([]);
   context.fillStyle = colors.faint;
   context.font = "500 15px " + sans;
-  context.fillText("loss · training", NET.output + 14, 402);
+  context.fillText("loss · training", NET.output + 14, lossY + 18);
 }
 
-// Quartz: the context as one row of characters; arcs show where the newest character looks
+// Pulsar: the context as one row of characters; arcs show where the newest character looks
 function drawAttentionView(context, step, info, colors, sans, mono) {
   const contextSize = info.context_size;
   const rowY = 250;
@@ -679,6 +702,217 @@ function drawAttentionView(context, step, info, colors, sans, mono) {
   drawOutputs(context, step, info, colors, sans, mono, outputY);
 }
 
+
+// ---------------------------------------------------------------- Pulsar: the whole transformer
+// Top: the context, with arcs showing where the newest character looks (one block at a time).
+// Bottom: the newest character's vector on its way through the blocks (the "residual stream"):
+//   embedding → block 1 (attention adds, MLP adds) → block 2 → block 3 → logits → softmax
+let attentionBlock = null;          // which block's attention is drawn on top (null = the last one)
+
+const TV = {
+  rowY: 128, left: 24, right: 640,      // the context row
+  streamY: 214,                         // the residual stream line
+  gridTop: 238,                         // where the dot grids start
+  embedX: 30,
+  blockLeft: 104, blockWidth: 172,      // block b starts at blockLeft + b * blockWidth
+};
+
+// a square-ish grid of colored dots; values are scaled so the biggest one is full color
+function dotGrid(context, values, left, top, columns, gap, radius, alreadyScaled) {
+  let biggest = 1e-9;
+  if (values && !alreadyScaled) for (const value of values) biggest = Math.max(biggest, Math.abs(value));
+  const count = values ? values.length : columns * columns;
+  for (let index = 0; index < count; index++) {
+    const x = left + (index % columns) * gap;
+    const y = top + Math.floor(index / columns) * gap;
+    const value = values ? (alreadyScaled ? values[index] : values[index] / biggest) : 0;
+    circle(context, x, y, radius, neuronColor(value));
+  }
+}
+
+function vectorSize(values) {
+  let total = 0;
+  for (const value of values) total += value * value;
+  return Math.sqrt(total);
+}
+
+function drawTransformerView(context, step, info, colors, sans, mono) {
+  const layers = info.layers;
+  const contextSize = info.context_size;
+  const blockCount = layers.blocks;
+  const trace = step && step.trace ? step.trace : null;
+  const shownBlock = attentionBlock === null || attentionBlock >= blockCount ? blockCount - 1 : attentionBlock;
+
+  // ---------- top: attention of one block
+  context.font = "500 17px " + sans;
+  context.fillStyle = colors.faint;
+  context.textAlign = "left";
+  context.textBaseline = "alphabetic";
+  context.fillText("attention · block " + (shownBlock + 1) + " · where the newest character looks", TV.left - 10, 24);
+  context.textAlign = "center";
+
+  const gap = (TV.right - TV.left) / (contextSize - 1);
+  const weights = trace ? trace.blocks[shownBlock].attention : null;
+  let biggest = 1e-9;
+  if (weights) for (const value of weights) biggest = Math.max(biggest, value);
+  if (weights) {
+    context.lineCap = "round";
+    context.strokeStyle = colors.accent;
+    for (let s = 0; s < contextSize; s++) {
+      const share = weights[s] / biggest;
+      if (share < 0.03) continue;
+      const x = TV.left + s * gap;
+      const height = Math.min(88, 14 + (TV.right - x) * 0.15);
+      context.globalAlpha = 0.12 + 0.88 * share;
+      context.lineWidth = 1 + 6 * share;
+      context.beginPath();
+      context.moveTo(TV.right, TV.rowY - 12);
+      context.quadraticCurveTo((TV.right + x) / 2, TV.rowY - 12 - height, x, TV.rowY - 12);
+      context.stroke();
+    }
+    context.globalAlpha = 1;
+  }
+  context.textBaseline = "middle";
+  for (let s = 0; s < contextSize; s++) {
+    const x = TV.left + s * gap;
+    const char = step ? step.context[s] : " ";
+    circle(context, x, TV.rowY, 9.5, colors.surface);
+    if (step && s === contextSize - 1) {
+      context.strokeStyle = colors.accent;
+      context.lineWidth = 2;
+      context.beginPath(); context.arc(x, TV.rowY, 9.5, 0, Math.PI * 2); context.stroke();
+    }
+    context.fillStyle = char === " " || char === "\n" ? colors.faint : colors.text;
+    context.font = "500 12px " + mono;
+    context.fillText(visibleChar(char || " "), x, TV.rowY + 1);
+    if (weights) {
+      context.fillStyle = colors.accent;
+      context.globalAlpha = 0.8;
+      context.fillRect(x - 3, TV.rowY + 14, 6, 26 * weights[s] / biggest);
+      context.globalAlpha = 1;
+    }
+  }
+
+  // ---------- bottom: the residual stream of the newest character
+  const blocksEnd = TV.blockLeft + blockCount * TV.blockWidth;
+  context.strokeStyle = colors.line;
+  context.lineWidth = 2;
+  line(context, TV.embedX, TV.streamY, NET.logits - NET.logitsHalf - 12, TV.streamY);
+
+  // embedding
+  dotGrid(context, trace ? trace.embedding : null, TV.embedX, TV.gridTop, 8, 7, 2.6, false);
+  context.font = "400 13px " + sans;
+  context.fillStyle = colors.faint;
+  context.fillText("embedding", TV.embedX + 24, TV.gridTop + 66);
+
+  // how much each part adds to the stream (vector sizes), on one shared scale
+  let biggestAdd = 1e-9;
+  if (trace) {
+    for (const block of trace.blocks) {
+      biggestAdd = Math.max(biggestAdd, vectorSize(block.attn_out), vectorSize(block.mlp_out));
+    }
+  }
+
+  for (let b = 0; b < blockCount; b++) {
+    const left = TV.blockLeft + b * TV.blockWidth;
+    const block = trace ? trace.blocks[b] : null;
+    const attnX = left + 4;
+    const mlpX = left + 64;
+
+    // block frame: the shown attention block is highlighted
+    context.strokeStyle = b === shownBlock ? colors.accent : colors.line;
+    context.lineWidth = b === shownBlock ? 1.6 : 1;
+    context.beginPath();
+    context.roundRect(left - 8, TV.streamY - 6, TV.blockWidth - 14, 196, 10);
+    context.stroke();
+    context.fillStyle = b === shownBlock ? colors.text : colors.muted;
+    context.font = "500 14px " + sans;
+    context.fillText("block " + (b + 1), left + (TV.blockWidth - 30) / 2, TV.streamY - 16 + 0);
+
+    // "+" where attention and the MLP add to the stream
+    for (const x of [attnX + 24, mlpX + 41]) {
+      circle(context, x, TV.streamY, 7, colors.surface);
+      context.strokeStyle = colors.muted; context.lineWidth = 1.2;
+      context.beginPath(); context.arc(x, TV.streamY, 7, 0, Math.PI * 2); context.stroke();
+      context.fillStyle = colors.text; context.font = "500 12px " + mono;
+      context.fillText("+", x, TV.streamY + 1);
+    }
+
+    // attention output (what it collected) and MLP neurons
+    dotGrid(context, block ? block.attn_out : null, attnX, TV.gridTop, 8, 7, 2.6, false);
+    dotGrid(context, block ? block.hidden : null, mlpX, TV.gridTop, 16, 5.4, 2.1, true);
+    context.font = "400 13px " + sans;
+    context.fillStyle = colors.faint;
+    context.fillText("attention", attnX + 24, TV.gridTop + 66);
+    context.fillText("MLP · " + layers.hidden, mlpX + 41, TV.gridTop + 96);
+
+    // contribution bars: how much attention / MLP changed the vector
+    if (block) {
+      const barLeft = attnX - 2;
+      const barWidth = 140;
+      const parts = [["attn", vectorSize(block.attn_out)], ["mlp", vectorSize(block.mlp_out)]];
+      for (let p = 0; p < 2; p++) {
+        const y = TV.gridTop + 124 + p * 16;
+        context.fillStyle = colors.surface;
+        context.fillRect(barLeft + 34, y - 4, barWidth - 34, 8);
+        context.fillStyle = colors.accent;
+        context.fillRect(barLeft + 34, y - 4, (barWidth - 34) * parts[p][1] / biggestAdd, 8);
+        context.textAlign = "left";
+        context.fillStyle = colors.muted;
+        context.font = "400 12px " + mono;
+        context.fillText(parts[p][0], barLeft, y);
+        context.textAlign = "center";
+      }
+    }
+  }
+
+  // logits bars + softmax, like Nebula
+  const outputY = [];
+  for (let k = 0; k < 5; k++) outputY.push(spread(k, 5, TV.gridTop - 6, 366));
+  context.font = "500 17px " + sans;
+  context.fillStyle = colors.faint;
+  context.fillText("logits", NET.logits, TV.streamY - 16);
+  const scores = step && step.scores ? step.scores : null;
+  if (scores) {
+    let biggestScore = 1e-9;
+    for (const value of scores) biggestScore = Math.max(biggestScore, Math.abs(value));
+    context.strokeStyle = colors.line;
+    context.lineWidth = 1;
+    line(context, NET.logits, outputY[0] - 12, NET.logits, outputY[4] + 12);
+    for (let k = 0; k < scores.length; k++) {
+      const length = (scores[k] / biggestScore) * NET.logitsHalf;
+      context.fillStyle = scores[k] >= 0 ? "rgba(79,141,255,0.85)" : "rgba(240,122,69,0.85)";
+      context.beginPath();
+      context.roundRect(Math.min(NET.logits, NET.logits + length), outputY[k] - 6, Math.abs(length), 12, 3);
+      context.fill();
+      context.font = "400 13px " + mono;
+      context.fillStyle = colors.muted;
+      context.textAlign = "left";
+      context.fillText(scores[k].toFixed(1), NET.logits + NET.logitsHalf + 6, outputY[k] + 1);
+      context.textAlign = "center";
+      context.strokeStyle = colors.line;
+      line(context, NET.logits + NET.logitsHalf + 34, outputY[k], NET.output - 19, outputY[k]);
+    }
+  }
+  drawOutputs(context, step, info, colors, sans, mono, outputY, 392, 404);
+  // the "softmax" title for the output column
+  context.font = "500 17px " + sans;
+  context.fillStyle = colors.faint;
+  context.fillText("softmax", NET.output + 22, TV.streamY - 16);
+}
+
+// which part of the Pulsar drawing is under the mouse
+function transformerPartAt(x, y, info) {
+  if (y < TV.rowY + 45) return { name: "attention" };
+  if (x > NET.output - 55 && y > 398) return { name: "loss" };
+  if (x > NET.output - 40) return { name: "output" };
+  if (x > NET.logits - NET.logitsHalf - 20) return { name: "logits" };
+  if (x < TV.blockLeft - 12) return { name: "embeddingTr" };
+  const block = Math.floor((x - TV.blockLeft + 8) / TV.blockWidth);
+  if (block >= 0 && block < info.layers.blocks) return { name: "block", block: block };
+  return { name: "idle" };
+}
+
 // hovering a layer explains it under the drawing
 function layerAt(x, y) {
   const info = state.available[state.current];
@@ -698,7 +932,23 @@ function showLayerNote(name) { $("layerNote").innerHTML = LAYER_INFO[name]; }
 $("network").addEventListener("mousemove", (event) => {
   const canvas = $("network");
   const scale = NET_W / canvas.clientWidth;
+  const info = state.available[state.current];
+  if (info && info.layers && info.layers.transformer) {
+    showLayerNote(transformerPartAt(event.offsetX * scale, event.offsetY * scale, info).name);
+    return;
+  }
   showLayerNote(layerAt(event.offsetX * scale, event.offsetY * scale));
+});
+// Pulsar: click a block to see its attention on top
+$("network").addEventListener("click", (event) => {
+  const info = state.available[state.current];
+  if (!info || !info.layers || !info.layers.transformer) return;
+  const scale = NET_W / $("network").clientWidth;
+  const part = transformerPartAt(event.offsetX * scale, event.offsetY * scale, info);
+  if (part.name === "block") {
+    attentionBlock = part.block;
+    drawNetwork(state.lastStep);
+  }
 });
 $("network").addEventListener("mouseleave", () => showLayerNote("idle"));
 showLayerNote("idle");
@@ -757,6 +1007,8 @@ function addUserMessage(text) {
 function addBotMessage(prompt) {
   const message = document.createElement("div");
   message.className = "message bot";
+  message.dataset.model = state.current;                  // the reply keeps the color of the model that wrote it
+  message.style.setProperty("--accent", modelColor(state.current));
 
   const avatar = document.createElement("div");
   avatar.className = "bot-avatar thinking";
@@ -834,8 +1086,32 @@ function setPaused(on) {
   else if (resumeDrawing) resumeDrawing();
 }
 
+// deletes the last `count` characters of a reply that are already on screen
+function removeLastCharacters(bot, count) {
+  let node = bot.caret.previousSibling;
+  while (count > 0 && node && node !== bot.echo) {
+    const previous = node.previousSibling;
+    const text = node.textContent;
+    if (node.classList && node.classList.contains("echo")) break;
+    if (text.length <= count) {
+      count -= text.length;
+      node.remove();
+    } else {
+      node.textContent = text.slice(0, text.length - count);
+      count = 0;
+    }
+    node = previous;
+  }
+}
+
 function setGenerating(on) {
   state.generating = on;
+  // the model, temperature and length are fixed for a reply; speed can change any time
+  $("modelButton").disabled = on;
+  $("composer").classList.toggle("writing", on);           // the ring around the message box speeds up
+  $("temperature").disabled = on;
+  $("length").disabled = on;
+  if (on) $("modelPicker").classList.remove("open");
   $("pauseButton").hidden = !on;
   if (!on) $("stepButton").hidden = true;
   const button = $("sendButton");
@@ -861,40 +1137,20 @@ async function send(prompt) {
   const controller = new AbortController();
   state.controller = controller;
   stepOnce = () => renderFrame(1);
-  // after a pause, the letters that piled up are played back at the chosen speed, not all at once
-  resumeDrawing = () => {
-    if (pending.length <= 1) {
-      if (!frameRequested) { frameRequested = true; requestAnimationFrame(() => renderFrame()); }
-      return;
-    }
-    catchingUp = true;
-    const playNext = () => {
-      if (state.paused || controller.signal.aborted) { catchingUp = false; return; }
-      if (pending.length === 0) { catchingUp = false; return; }   // caught up: back to normal drawing
-      const delay = parseInt($("speed").value);
-      renderFrame(delay === 0 ? 8 : 1);                           // speed "max": 8 letters per frame
-      if (delay === 0) requestAnimationFrame(playNext);
-      else setTimeout(playNext, delay);
-    };
-    playNext();
-  };
+  resumeDrawing = () => startPump();
 
   const startTime = performance.now();
   let count = 0;
   let confidenceSum = 0;
   let ending = "";
 
-  // characters arrive faster than the screen refreshes, so they wait here
-  // and get drawn together once per frame (this is what keeps it smooth)
+  // The server sends letters as fast as it can; they wait in this queue
+  // and are shown at the speed chosen with the Speed slider (which you can move while it writes).
   let pending = [];
-  let frameRequested = false;
-  let catchingUp = false;     // true while replaying letters that piled up during a pause
 
   // limit = how many waiting letters to draw (undefined = all of them)
   function renderFrame(limit) {
-    frameRequested = false;
     if (pending.length === 0) return;
-    if ((state.paused || catchingUp) && limit === undefined) return;   // paused or replaying: letters wait their turn
 
     let take = pending.length;
     if (limit !== undefined && limit < take) take = limit;
@@ -914,6 +1170,7 @@ async function send(prompt) {
       batch.push(span);
     }
     bot.text.insertBefore(fragment, bot.caret);
+    emitFromCaret(bot.caret);                               // a little trail of particles behind the new letters
     // once the fade-in is over, glue these letters to the text before them
     setTimeout(() => settleLetters(batch), 500);
 
@@ -934,14 +1191,33 @@ async function send(prompt) {
     scrollToBottom(false);
   }
 
-  // a letter goes on screen: count it and wait for the next frame
+  // the "pump" takes letters from the queue at the current speed, until the queue is empty
+  let pumping = false;
+  function startPump() {
+    if (pumping) return;
+    pumping = true;
+    pump();
+  }
+  function pump() {
+    if (state.paused || controller.signal.aborted || pending.length === 0) {
+      pumping = false;
+      return;
+    }
+    const delay = parseInt($("speed").value);
+    if (delay === 0) {
+      renderFrame();                        // max speed: everything that arrived, once per frame
+      requestAnimationFrame(pump);
+    } else {
+      renderFrame(1);                       // one letter, then wait `delay` ms
+      setTimeout(pump, delay);
+    }
+  }
+
+  // a letter arrived from the server: put it in the queue
   let held = [];
   function show(step) {
     pending.push(step);
-    if (!frameRequested && !state.paused && !catchingUp) {
-      frameRequested = true;
-      requestAnimationFrame(renderFrame);
-    }
+    startPump();
   }
 
   try {
@@ -954,7 +1230,7 @@ async function send(prompt) {
         prompt: prompt,
         temperature: parseFloat($("temperature").value),
         max_chars: lengthValue >= 850 ? 0 : lengthValue,   // 0 = auto
-        delay_ms: parseInt($("speed").value),
+        delay_ms: 0,                                         // the page sets the speed, see pump()
       }),
       signal: controller.signal,
     });
@@ -991,6 +1267,13 @@ async function send(prompt) {
           }
         } else if (step.type === "end_of_story") {
           held = [];                                       // the marker: throw it away
+          if (step.remove) {
+            // a damaged marker ("endoftext|>") was already shown or is waiting: take it back
+            let toRemove = step.remove;
+            while (toRemove > 0 && pending.length > 0) { pending.pop(); toRemove -= 1; }
+            removeLastCharacters(bot, toRemove);
+            count -= Math.min(count, toRemove);
+          }
           ending = "Ended the story on its own.";
         }
       }
@@ -1004,7 +1287,6 @@ async function send(prompt) {
   // the server may be done while letters still wait (paused): keep drawing until the queue is empty
   stepOnce = () => renderFrame(1);
   while (pending.length > 0 && !controller.signal.aborted) {
-    if (!state.paused && !catchingUp) renderFrame();
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
   stepOnce = null;
@@ -1148,7 +1430,12 @@ setConfidenceColors(loadPreference("alexgpt-confidence") !== "off");
 
 function bindSlider(id, format) {
   const slider = $(id);
-  const show = () => { $(id + "Value").textContent = format(parseFloat(slider.value)); };
+  const show = () => {
+    $(id + "Value").textContent = format(parseFloat(slider.value));
+    // how far the knob is, in %, so the track left of it can be colored
+    const percent = (slider.value - slider.min) / (slider.max - slider.min) * 100;
+    slider.style.setProperty("--fill", percent + "%");
+  };
   slider.addEventListener("input", show);
   show();
 }
@@ -1156,8 +1443,8 @@ bindSlider("speed", (ms) => (ms === 0 ? "max" : ms + " ms"));
 bindSlider("temperature", (t) => t.toFixed(2));
 bindSlider("length", (n) => (n >= 850 ? "Auto" : String(n)));
 
-// brand mark: the Diamond icon, in the text color
-const brandIcon = makeIcon("Diamond", 18);
+// brand mark: the Singularity icon, in the text color
+const brandIcon = makeIcon("Singularity", 18);
 brandIcon.removeAttribute("data-model");
 brandIcon.style.setProperty("--icon-color", "var(--text)");
 $("brandMark").append(brandIcon);
@@ -1166,3 +1453,403 @@ buildBars();
 drawBars([], "");
 updateSendButton();
 loadModels();
+
+// ================================================================ COSMOS BACKGROUND
+// One canvas behind the chat. Every model has its own small universe, drawn faintly
+// so it never fights with the text. It pauses when the tab is hidden and stays still
+// for people who ask their system for reduced motion.
+
+const cosmos = {
+  canvas: null, context: null, width: 0, height: 0, ratio: 1,
+  scene: null, model: null, stars: [], last: 0, time: 0,
+  reducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+};
+
+function hexToRgb(hex) {
+  const value = parseInt(hex.replace("#", ""), 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+function rgba(rgb, alpha) {
+  return "rgba(" + rgb[0] + "," + rgb[1] + "," + rgb[2] + "," + alpha.toFixed(3) + ")";
+}
+function cosmosInk() {
+  // star color: light dots on dark, dark dots on light
+  return theme() === "light" ? [40, 40, 70] : [235, 238, 255];
+}
+function random(min, max) { return min + Math.random() * (max - min); }
+
+function resizeCosmos() {
+  const canvas = cosmos.canvas;
+  cosmos.ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+  cosmos.width = canvas.clientWidth;
+  cosmos.height = canvas.clientHeight;
+  canvas.width = Math.round(cosmos.width * cosmos.ratio);
+  canvas.height = Math.round(cosmos.height * cosmos.ratio);
+  makeStars();
+  if (cosmos.scene) cosmos.scene.init();
+}
+
+function makeStars() {
+  cosmos.stars = [];
+  const count = Math.round((cosmos.width * cosmos.height) / 9000);
+  for (let i = 0; i < count; i++) {
+    cosmos.stars.push({ x: Math.random(), y: Math.random(), size: random(0.4, 1.3),
+                        phase: random(0, 6.28), speed: random(0.3, 1.2), base: random(0.15, 0.55) });
+  }
+}
+
+function drawStars(context, strength) {
+  const ink = cosmosInk();
+  for (const star of cosmos.stars) {
+    const twinkle = 0.6 + 0.4 * Math.sin(cosmos.time * star.speed + star.phase);
+    context.fillStyle = rgba(ink, star.base * twinkle * strength);
+    context.fillRect(star.x * cosmos.width, star.y * cosmos.height, star.size, star.size);
+  }
+}
+
+function glow(context, x, y, radius, rgb, alpha) {
+  const gradient = context.createRadialGradient(x, y, 0, x, y, radius);
+  gradient.addColorStop(0, rgba(rgb, alpha));
+  gradient.addColorStop(1, rgba(rgb, 0));
+  context.fillStyle = gradient;
+  context.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+}
+
+// ---------------------------------------------------------------- the six universes
+const SCENES = {
+
+  // Spark: warm sparks rising slowly from the bottom, like embers from a fire
+  Spark: (color) => {
+    let sparks = [];
+    return {
+      init() {
+        sparks = [];
+        for (let i = 0; i < 46; i++) sparks.push(newSpark(true));
+      },
+      draw(context, delta) {
+        drawStars(context, 0.5);
+        for (const spark of sparks) {
+          spark.y -= spark.speed * delta;
+          spark.x += Math.sin(cosmos.time * spark.sway + spark.phase) * 0.15;
+          const life = spark.y / cosmos.height;
+          const flicker = 0.55 + 0.45 * Math.sin(cosmos.time * 7 + spark.phase);
+          glow(context, spark.x, spark.y, spark.size * 5, color, 0.16 * flicker * life);
+          context.fillStyle = rgba(color, 0.75 * flicker * life);
+          context.beginPath(); context.arc(spark.x, spark.y, spark.size, 0, 6.28); context.fill();
+          if (spark.y < -10) Object.assign(spark, newSpark(false));
+        }
+      },
+    };
+    function newSpark(anywhere) {
+      return { x: random(0, cosmos.width), y: anywhere ? random(0, cosmos.height) : cosmos.height + 10,
+               speed: random(10, 34), size: random(0.6, 1.8), sway: random(0.4, 1.4), phase: random(0, 6.28) };
+    }
+  },
+
+  // Nebula: big soft clouds of colored gas drifting past each other
+  Nebula: (color) => {
+    let clouds = [];
+    const second = [color[2], Math.round(color[1] * 0.7), color[0]];   // a second tint, from the same color
+    return {
+      init() {
+        clouds = [];
+        const size = Math.max(cosmos.width, cosmos.height);
+        for (let i = 0; i < 6; i++) {
+          clouds.push({ x: random(0.1, 0.9), y: random(0.05, 0.8), radius: random(0.22, 0.42) * size,
+                        speedX: random(0.02, 0.05), speedY: random(0.015, 0.04), phase: random(0, 6.28),
+                        tint: i % 2 === 0 ? color : second, alpha: random(0.07, 0.12) });
+        }
+      },
+      draw(context) {
+        drawStars(context, 0.8);
+        context.globalCompositeOperation = theme() === "light" ? "multiply" : "screen";
+        for (const cloud of clouds) {
+          const x = (cloud.x + 0.08 * Math.sin(cosmos.time * cloud.speedX + cloud.phase)) * cosmos.width;
+          const y = (cloud.y + 0.08 * Math.cos(cosmos.time * cloud.speedY + cloud.phase)) * cosmos.height;
+          glow(context, x, y, cloud.radius, cloud.tint, cloud.alpha);
+        }
+        context.globalCompositeOperation = "source-over";
+      },
+    };
+  },
+
+  // Pulsar: a far-away spinning star; two faint beams turn slowly, a soft ring pulses now and then
+  Pulsar: (color) => {
+    return {
+      init() {},
+      draw(context) {
+        drawStars(context, 0.8);
+        const x = cosmos.width * 0.86, y = cosmos.height * 0.16;
+        const angle = cosmos.time * 0.12;                         // one turn every ~50 seconds
+        const length = Math.min(cosmos.width, cosmos.height) * 0.55;
+        for (const side of [0, Math.PI]) {
+          const direction = angle + side;
+          const endX = x + Math.cos(direction) * length, endY = y + Math.sin(direction) * length;
+          const gradient = context.createLinearGradient(x, y, endX, endY);
+          gradient.addColorStop(0, rgba(color, 0.10));
+          gradient.addColorStop(1, rgba(color, 0));
+          context.fillStyle = gradient;
+          context.beginPath();
+          context.moveTo(x, y);
+          context.lineTo(x + Math.cos(direction - 0.035) * length, y + Math.sin(direction - 0.035) * length);
+          context.lineTo(x + Math.cos(direction + 0.035) * length, y + Math.sin(direction + 0.035) * length);
+          context.closePath();
+          context.fill();
+        }
+        const progress = (cosmos.time / 4) % 1;                   // one soft ring every 4 seconds
+        context.strokeStyle = rgba(color, 0.12 * (1 - progress));
+        context.lineWidth = 1;
+        context.beginPath(); context.arc(x, y, 6 + progress * 90, 0, 6.28); context.stroke();
+        const beat = 0.8 + 0.2 * Math.sin(cosmos.time * 2.5);
+        glow(context, x, y, 26, color, 0.22 * beat);
+        context.fillStyle = rgba(theme() === "light" ? color : [255, 255, 255], 0.8);
+        context.beginPath(); context.arc(x, y, 1.8, 0, 6.28); context.fill();
+      },
+    };
+  },
+
+  // Galaxy: thousands of stars on two spiral arms, turning slowly (inner stars faster)
+  Galaxy: (color) => {
+    let particles = [];
+    return {
+      init() {
+        particles = [];
+        const scale = Math.min(cosmos.width, cosmos.height) * 0.55;
+        for (let i = 0; i < 1400; i++) {
+          const arm = i % 2;
+          const distance = Math.pow(Math.random(), 0.65);
+          particles.push({ distance: distance * scale,
+                           angle: arm * Math.PI + distance * 5.6 + random(-0.4, 0.4) * (1.25 - distance),
+                           size: random(0.6, 1.9), alpha: random(0.35, 1) * (1.15 - distance * 0.8),
+                           white: Math.random() < 0.25 });            // some stars are white, most take the model color
+        }
+      },
+      draw(context, delta) {
+        drawStars(context, 0.6);
+        const x = cosmos.width * 0.78, y = cosmos.height * 0.26;
+        glow(context, x, y, Math.min(cosmos.width, cosmos.height) * 0.3, color, 0.22);
+        const ink = cosmosInk();
+        for (const particle of particles) {
+          particle.angle += delta * 0.05 / (0.25 + particle.distance / 300);
+          const px = x + Math.cos(particle.angle) * particle.distance;
+          const py = y + Math.sin(particle.angle) * particle.distance * 0.5;    // tilted disc
+          context.fillStyle = rgba(particle.white ? ink : color, particle.alpha * 0.8);
+          context.fillRect(px, py, particle.size, particle.size);
+        }
+        glow(context, x, y, 30, theme() === "light" ? color : [255, 255, 255], 0.35);
+      },
+    };
+  },
+
+  // Supernova: a star explodes again and again; a shock wave and debris fly outwards
+  Supernova: (color) => {
+    let debris = [];
+    let lastBlast = -10;
+    return {
+      init() { debris = []; lastBlast = -10; },
+      draw(context, delta) {
+        drawStars(context, 0.7);
+        const x = cosmos.width * 0.8, y = cosmos.height * 0.24;
+        const since = cosmos.time - lastBlast;
+        if (since > 6) {
+          lastBlast = cosmos.time;
+          for (let i = 0; i < 70; i++) {
+            const angle = random(0, 6.28);
+            debris.push({ x, y, speedX: Math.cos(angle) * random(25, 130), speedY: Math.sin(angle) * random(25, 130),
+                          life: 1, size: random(0.8, 2.6) });
+          }
+        }
+        const flash = Math.max(0, 1 - since / 0.8);
+        glow(context, x, y, 70 + since * 45, color, 0.12 * Math.max(0, 1 - since / 6));   // the glowing remnant grows
+        glow(context, x, y, 60 + 160 * flash, color, 0.2 + 0.45 * flash);
+        for (let wave = 0; wave < 2; wave++) {
+          const radius = since * (110 - wave * 35);
+          const fade = Math.max(0, 1 - since / 6);
+          context.strokeStyle = rgba(color, 0.3 * fade);
+          context.lineWidth = 2 - wave;
+          context.beginPath(); context.arc(x, y, radius, 0, 6.28); context.stroke();
+        }
+        for (const piece of debris) {
+          piece.x += piece.speedX * delta; piece.y += piece.speedY * delta;
+          piece.life -= delta / 6;
+          context.fillStyle = rgba(color, Math.max(0, piece.life) * 0.95);
+          context.fillRect(piece.x, piece.y, piece.size, piece.size);
+        }
+        debris = debris.filter((piece) => piece.life > 0);
+        context.fillStyle = rgba([255, 255, 255], 0.85);
+        context.beginPath(); context.arc(x, y, 2.4, 0, 6.28); context.fill();
+      },
+    };
+  },
+
+  // Singularity: a black hole; hot matter spirals in along a glowing disc and disappears
+  Singularity: (color) => {
+    let matter = [];
+    const hot = [255, 196, 132];                          // the disc glows warm, like hot gas
+    return {
+      init() {
+        matter = [];
+        for (let i = 0; i < 420; i++) matter.push(newMatter(true));
+      },
+      draw(context, delta) {
+        drawStars(context, 0.7);
+        const x = cosmos.width * 0.78, y = cosmos.height * 0.28;
+        const hole = Math.min(cosmos.width, cosmos.height) * 0.05;
+        glow(context, x, y, hole * 7, hot, 0.13);
+        glow(context, x, y, hole * 4, color, 0.12);
+        // move every particle: faster and closer as it falls in
+        for (const particle of matter) {
+          particle.angle += delta * 1.4 / Math.sqrt(particle.distance / hole);
+          particle.distance -= delta * 18 * (hole / particle.distance);
+          if (particle.distance < hole * 1.1) Object.assign(particle, newMatter(false));
+        }
+        // back half of the disc, then the hole, then the front half (so the disc passes in front of it)
+        drawDisc(context, x, y, hole, false);
+        context.fillStyle = theme() === "light" ? "rgba(18,14,30,0.92)" : "rgba(0,0,0,1)";
+        context.beginPath(); context.arc(x, y, hole, 0, 6.28); context.fill();
+        context.strokeStyle = rgba(hot, 0.7 + 0.2 * Math.sin(cosmos.time * 2));
+        context.lineWidth = 1.6;
+        context.shadowColor = rgba(hot, 0.9);
+        context.shadowBlur = 14;
+        context.beginPath(); context.arc(x, y, hole * 1.06, 0, 6.28); context.stroke();
+        context.shadowBlur = 0;
+        drawDisc(context, x, y, hole, true);
+      },
+    };
+    function drawDisc(context, x, y, hole, front) {
+      for (const particle of matter) {
+        const inFront = Math.sin(particle.angle) > 0;
+        if (inFront !== front) continue;
+        const px = x + Math.cos(particle.angle) * particle.distance;
+        const py = y + Math.sin(particle.angle) * particle.distance * 0.28;
+        const heat = Math.min(1, (hole * 2.2) / particle.distance);
+        context.fillStyle = rgba(heat > 0.5 ? hot : color, (0.3 + 0.65 * heat) * particle.alpha);
+        context.fillRect(px, py, particle.size, particle.size);
+      }
+    }
+    function newMatter(anywhere) {
+      const hole = Math.min(cosmos.width, cosmos.height) * 0.05;
+      return { distance: anywhere ? random(hole * 1.2, hole * 8) : random(hole * 5, hole * 8),
+               angle: random(0, 6.28), size: random(0.7, 1.9), alpha: random(0.5, 1) };
+    }
+  },
+};
+
+// ---------------------------------------------------------------- particles from the writing cursor
+// Every model leaves a different little trail behind the letters it writes.
+// Kept small and short-lived, and emitted at most every `every` seconds, so at high speed
+// they stay a small glow at the cursor instead of a stripe over the whole line.
+const TRAILS = {
+  Spark:       { every: 0.07, speedX: [-6, 6],  speedY: [-24, -10], life: 0.8,  size: [1.0, 1.9], gravity: 0 },     // embers rise
+  Nebula:      { every: 0.09, speedX: [-6, 6],  speedY: [-6, 6],    life: 1.0,  size: [2.2, 3.4], gravity: 0, soft: true }, // soft puffs
+  Pulsar:      { every: 0.18, speedX: [0, 0],   speedY: [0, 0],     life: 0.8,  size: [1, 1],     gravity: 0, ring: true }, // a small ring
+  Galaxy:      { every: 0.08, speedX: [-7, 7],  speedY: [6, 16],    life: 0.8,  size: [0.8, 1.4], gravity: 12, star: true }, // little falling stars
+  Supernova:   { every: 0.07, speedX: [-22, 22], speedY: [-22, 22], life: 0.55, size: [0.8, 1.5], gravity: 0 },    // tiny bursts
+  Singularity: { every: 0.08, speedX: [0, 0],   speedY: [0, 0],     life: 0.75, size: [0.8, 1.4], gravity: 0, orbit: true }, // pulled in
+};
+const sparks = [];
+let lastSparkTime = 0;
+
+function emitFromCaret(caret) {
+  if (cosmos.reducedMotion || !caret || !caret.isConnected || !cosmos.model) return;
+  const trail = TRAILS[cosmos.model] || TRAILS.Spark;
+  const now = performance.now() / 1000;
+  if (now - lastSparkTime < trail.every) return;
+  lastSparkTime = now;
+  const box = caret.getBoundingClientRect();
+  if (box.width === 0) return;
+  for (let i = 0; i < 1; i++) {
+    if (sparks.length > 32) sparks.shift();
+    sparks.push({
+      x: box.left + box.width / 2, y: box.top + box.height / 2,
+      speedX: random(trail.speedX[0], trail.speedX[1]), speedY: random(trail.speedY[0], trail.speedY[1]),
+      age: 0, life: trail.life * random(0.7, 1.2), size: random(trail.size[0], trail.size[1]),
+      angle: random(0, 6.28), radius: random(6, 11), trail: trail,
+    });
+  }
+}
+
+function drawSparks(context, delta) {
+  if (sparks.length === 0) return;
+  const color = hexToRgb(modelColor(cosmos.model || "Spark"));
+  for (let i = sparks.length - 1; i >= 0; i--) {
+    const spark = sparks[i];
+    spark.age += delta;
+    if (spark.age > spark.life) { sparks.splice(i, 1); continue; }
+    const fade = 1 - spark.age / spark.life;
+    const trail = spark.trail;
+    if (trail.ring) {
+      context.strokeStyle = rgba(color, 0.6 * fade);
+      context.lineWidth = 1.2;
+      context.beginPath(); context.arc(spark.x, spark.y, 2 + (1 - fade) * 10, 0, 6.28); context.stroke();
+      continue;
+    }
+    let x, y;
+    if (trail.orbit) {
+      spark.angle += delta * 6;
+      const radius = spark.radius * fade;                    // spirals into the cursor
+      x = spark.x + Math.cos(spark.angle) * radius;
+      y = spark.y + Math.sin(spark.angle) * radius * 0.5;
+    } else {
+      spark.speedY += trail.gravity * delta;
+      spark.x += spark.speedX * delta; spark.y += spark.speedY * delta;
+      x = spark.x; y = spark.y;
+    }
+    if (trail.soft) {
+      glow(context, x, y, spark.size * 3.5, color, 0.6 * fade);
+      context.fillStyle = rgba(color, 0.55 * fade);             // a small bright core so it shows on the purple sky
+      context.beginPath(); context.arc(x, y, spark.size * 0.45, 0, 6.28); context.fill();
+    } else if (trail.star) {
+      context.strokeStyle = rgba(color, 0.85 * fade);
+      context.lineWidth = 1;
+      const arm = spark.size * 1.4;
+      context.beginPath(); context.moveTo(x - arm, y); context.lineTo(x + arm, y); context.moveTo(x, y - arm); context.lineTo(x, y + arm); context.stroke();
+    } else {
+      context.fillStyle = rgba(color, 0.9 * fade);
+      context.beginPath(); context.arc(x, y, spark.size, 0, 6.28); context.fill();
+    }
+  }
+}
+
+function setCosmosModel(name) {
+  if (!cosmos.canvas) return;
+  const makeScene = SCENES[name] || SCENES.Spark;
+  const color = hexToRgb(modelColor(name));
+  // fade out, switch universe, fade in
+  cosmos.canvas.classList.add("switching");
+  setTimeout(() => {
+    cosmos.model = name;
+    cosmos.scene = makeScene(color);
+    cosmos.scene.init();
+    if (cosmos.reducedMotion) drawCosmosFrame(0);
+    cosmos.canvas.classList.remove("switching");
+  }, cosmos.scene ? 350 : 0);
+}
+
+function drawCosmosFrame(delta) {
+  const context = cosmos.context;
+  context.setTransform(cosmos.ratio, 0, 0, cosmos.ratio, 0, 0);
+  context.clearRect(0, 0, cosmos.width, cosmos.height);
+  if (cosmos.scene) cosmos.scene.draw(context, delta);
+  drawSparks(context, delta);
+}
+
+function cosmosLoop(now) {
+  const delta = Math.min(0.05, (now - cosmos.last) / 1000);
+  cosmos.last = now;
+  if (!document.hidden && !cosmos.reducedMotion) {
+    cosmos.time += delta;
+    drawCosmosFrame(delta);
+  }
+  requestAnimationFrame(cosmosLoop);
+}
+
+function startCosmos() {
+  cosmos.canvas = $("cosmos");
+  cosmos.context = cosmos.canvas.getContext("2d");
+  resizeCosmos();
+  window.addEventListener("resize", resizeCosmos);
+  cosmos.last = performance.now();
+  requestAnimationFrame(cosmosLoop);
+}
+startCosmos();

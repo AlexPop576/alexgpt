@@ -18,12 +18,14 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <canvas class="cosmos" id="cosmos" aria-hidden="true"></canvas>
   <div class="app">
 
     <header class="topbar">
       <div class="brand">
         <span class="brand-mark" id="brandMark"></span>
         <span class="brand-name">AlexGPT</span>
+        <span class="brand-tag">Cosmos</span>
       </div>
       <div class="topbar-actions">
         <button class="icon-button" id="themeToggle" title="Light / dark">
@@ -43,19 +45,19 @@
         <div class="messages scroll" id="messages">
           <div class="empty" id="emptyState">
             <div class="empty-icon" id="emptyIcon"></div>
-            <h1>Start a story.</h1>
-            <p id="emptySubtitle">My model continues your text, one character at a time.</p>
+            <h1>Hi, I'm AlexGPT.</h1>
+            <p id="emptySubtitle">Built from scratch, one model at a time. Say something.</p>
             <div class="suggestions">
-              <button class="chip">Once upon a time</button>
-              <button class="chip">Lily and Tom went to the park</button>
-              <button class="chip">The little dog was very</button>
+              <button class="chip">Hi! How are you?</button>
+              <button class="chip">Why is the sky blue?</button>
+              <button class="chip">Tell me about your day</button>
             </div>
           </div>
         </div>
 
         <form class="composer" id="composer">
           <div class="composer-box">
-            <textarea id="input" rows="1" placeholder="Write the beginning of a story…" autocomplete="off"></textarea>
+            <textarea id="input" rows="1" placeholder="Message AlexGPT…" autocomplete="off"></textarea>
 
             <div class="model-picker" id="modelPicker">
               <button type="button" class="model-button" id="modelButton" aria-haspopup="listbox">
