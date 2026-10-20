@@ -37,6 +37,10 @@
           <svg class="icon-moon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 9.6A5.6 5.6 0 0 1 6.4 2.5a5.6 5.6 0 1 0 7.1 7.1Z" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
           <svg class="icon-sun" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="3" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M8 1.5v1.6M8 12.9v1.6M1.5 8h1.6M12.9 8h1.6M3.4 3.4l1.1 1.1M11.5 11.5l1.1 1.1M3.4 12.6l1.1-1.1M11.5 4.5l1.1-1.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
         </button>
+        <button class="icon-button" id="trainingToggle" title="Watch Supernova learn">
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 13.5h13" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/><path d="M2.5 3c1.5 5 3 7.5 5.5 8.2 2.2.6 4.2.4 6-.2" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+          <span>Training</span>
+        </button>
         <button class="icon-button" id="panelToggle" title="See what happens inside the model">
           <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="1.5" y="2.5" width="13" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><line x1="10" y1="2.5" x2="10" y2="13.5" stroke="currentColor" stroke-width="1.3"/></svg>
           <span>Visualisation</span>
@@ -103,13 +107,13 @@
         <div class="resize-handle" id="resizeHandle" title="Drag to resize"></div>
         <div class="inside-content">
 
-          <div class="panel-section">
+          <div class="panel-section" id="contextSection">
             <div class="section-title">Context <span class="faint" id="contextLabel"></span></div>
             <div class="context" id="contextChips"></div>
             <div class="note">All the model can see.</div>
           </div>
 
-          <div class="panel-section">
+          <div class="panel-section" id="nextSection">
             <div class="section-title">Next character</div>
             <div class="chosen">
               <div class="chosen-char" id="chosenChar">·</div>
@@ -124,7 +128,7 @@
 
           <div class="panel-section">
             <div class="section-title title-row">
-              <span>Network <span class="faint" id="networkLabel"></span></span>
+              <span><span class="net-title">Network</span><span class="flow-title">Inside, one token at a time</span> <span class="faint" id="networkLabel"></span></span>
               <label class="mini-switch" title="Show the connections that carry the most signal right now">
                 Weights
                 <span class="switch small"><input type="checkbox" id="weightsToggle"><span class="knob"></span></span>
@@ -132,6 +136,7 @@
             </div>
             <canvas class="network" id="network" width="580" height="400"></canvas>
             <div class="layer-note" id="layerNote"></div>
+            <div class="flow" id="flow"></div>
           </div>
 
           <div class="panel-section">
@@ -158,6 +163,10 @@
             <div class="confidence-legend" id="confidenceLegend">
               <span class="p0">&lt;10%</span><span class="p1">10–30</span><span class="p2">30–60</span><span class="p3">60–90</span><span class="p4">90%+</span>
             </div>
+            <label class="control switch-row">
+              <span>Show tokens <span class="faint">how the model cuts the text</span></span>
+              <span class="switch"><input type="checkbox" id="tokensToggle"><span class="knob"></span></span>
+            </label>
           </div>
 
           <div class="panel-section">
@@ -170,17 +179,58 @@
             <div class="ending" id="statEnding"></div>
           </div>
 
-          <div class="panel-section roadmap">
-            <div class="section-title">Coming next</div>
-            <div class="soon"><span class="lock"></span>Attention map</div>
-            <div class="soon"><span class="lock"></span>Live training</div>
-          </div>
-
         </div>
       </aside>
+
+      <section class="training scroll" id="trainingPage" hidden>
+        <div class="tr-inner">
+          <div class="tr-top">
+            <div>
+              <h2>Supernova · live training</h2>
+              <div class="tr-status" id="trStatus">Loading…</div>
+            </div>
+            <button class="icon-button" id="trClose" title="Back to the chat (Esc)" aria-label="Close">
+              <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="tr-stats" id="trStats"></div>
+          <div class="tr-progress" id="trProgress"></div>
+
+          <div class="tr-card">
+            <div class="tr-title">Loss <span>how surprised it is by the real next token · lower = better</span></div>
+            <div class="tr-legend">
+              <span><i class="sw train"></i>training loss (smoothed)</span>
+              <span><i class="sw en"></i>validation EN</span>
+              <span><i class="sw ro"></i>validation RO</span>
+            </div>
+            <svg class="tr-chart" id="trChart" role="img" aria-label="Loss over training steps"></svg>
+            <div class="tr-note">Validation = text it never trains on. If training loss went down but validation went up, it would be memorising instead of learning. Loss 3 ≈ it gives the right token about 1/20 chance (e<sup>−3</sup>); Galaxy ended at 1.5 on much simpler stories.</div>
+          </div>
+
+          <div class="tr-card">
+            <div class="tr-title">How its writing improves <span>the same start, every 250 steps</span></div>
+            <div class="tr-chips" id="trPrompts"></div>
+            <div class="tr-samples scroll" id="trSamples"></div>
+          </div>
+
+          <div class="tr-card">
+            <div class="tr-title">What it reads <span>a random document from the training data</span></div>
+            <div class="tr-chips" id="peekSources"></div>
+            <div class="tr-peek-source" id="peekSource"></div>
+            <div class="tr-peek scroll" id="peekText"></div>
+            <div class="tr-peek-actions"><button class="tr-button" id="peekAgain">Another one</button></div>
+            <div class="tr-note">Raw text from the internet, ~2 billion tokens of it. The model learns how text continues, not what is true or kind: a sad story, a sarcastic forum post and a Wikipedia table all look the same to it. Being helpful and polite comes later, from the chat training (SFT).</div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
+  <div class="flow-tip" id="flowTip" hidden></div>
 
   <script src="app.js"></script>
+  <script src="flow.js"></script>
+  <script src="training.js"></script>
+  <script src="tokens.js"></script>
+  <script>setupFlow(); setupTraining(); setupTokenView();</script>
 </body>
 </html>

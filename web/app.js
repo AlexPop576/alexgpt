@@ -218,7 +218,8 @@ function selectModel(name) {
 
   document.documentElement.style.setProperty("--accent", modelColor(name));
   document.documentElement.dataset.model = name;
-  document.documentElement.dataset.chat = isChatModel(name) ? "1" : "0";          // lets the CSS give every model its own animations
+  document.documentElement.dataset.chat = isChatModel(name) ? "1" : "0";
+  $("length").dispatchEvent(new Event("input"));            // the Length label means something else for chat models          // lets the CSS give every model its own animations
   setCosmosModel(name);
 
   if (isChatModel(name)) {
@@ -233,6 +234,7 @@ function selectModel(name) {
   state.lastStep = null;
   netColors = null;                 // the accent color changed
   attentionBlock = null;
+  flowReset();                      // flow.js: forget the other model's tokens
   // the Weights switch only means something for Nebula's network
   const hasWeights = info.layers && info.layers.hidden > 0 && !info.layers.transformer;
   $("weightsToggle").closest("label").style.visibility = hasWeights ? "visible" : "hidden";
@@ -344,15 +346,6 @@ const LAYER_INFO = {
   block:     "<b>Transformer block.</b> The line on top is the residual stream: the newest character's vector, passed from block to block. Attention collects information from the characters before and adds it to the vector (first +), then the MLP thinks about it and adds its result (second +). The bars show how much each part changed the vector. Click a block to see its attention on top.",
   table:     "<b>Count table.</b> Spark has no neurons: it reads the row of the previous character from its table of counts.",
   loss:      "<b>Loss, only during training.</b> −log of the probability given to the real next character. When chatting there is no right answer, so there is no loss.",
-  g_input:     "<b>Input.</b> The last 12 tokens the model sees (it sees up to 256). The highlighted one is the newest: everything below is what happens to it to guess the token after it.",
-  g_embedding: "<b>Embedding.</b> The token's row from the token table (what it is) plus the row for its position (where it is) = the vector x, 512 numbers. Each thin cell is one number: accent = positive, red = negative, brighter = bigger.",
-  g_block:     "<b>A block.</b> Attention, then MLP. Each one ADDS its result to x instead of replacing it (the residual line on the left). The % says how much each part changed x in this block.",
-  g_heads:     "<b>Attention, 8 heads.</b> One row per head, the columns are the input tokens on top. Bright = the newest token takes a lot of information from that token. Every head looks for something different, at the same time.",
-  g_attention: "<b>What attention adds.</b> The 8 heads' results, glued (8 × 64 = 512) and mixed by the out layer. This vector is added to x.",
-  g_neurons:   "<b>MLP neurons.</b> x goes into 2048 neurons (shown squeezed to 256), then GELU. Here the token 'thinks' alone, using what attention brought: no looking at other tokens.",
-  g_mlp:       "<b>What the MLP adds.</b> The 2048 neurons are mixed back into 512 numbers and added to x.",
-  g_stream:    "<b>x after the block.</b> The residual stream: x + attention + MLP. This goes into the next block. Watch it change from block to block.",
-  g_output:    "<b>Output.</b> The last x is normalized and compared with the vector of every one of the 2048 tokens (same table as the embedding). The match = score (logit). Softmax turns the scores into probabilities; one token is drawn.",
   idle:      "Hover a layer to see what it does. Turn on Weights to see which connections carry the most signal for the current character.",
 };
 
@@ -403,6 +396,12 @@ function line(context, x1, y1, x2, y2) {
 }
 
 function drawNetwork(step) {
+  const chatInfo = state.available[state.current];
+  if (chatInfo && chatInfo.layers && chatInfo.layers.chat) {
+    renderFlow(step);                       // flow.js: the 3-step view, drawn as HTML
+    $("networkLabel").textContent = formatParams(chatInfo.params);
+    return;
+  }
   const canvas = $("network");
   const shownWidth = canvas.clientWidth;
   if (shownWidth === 0) return;                         // panel closed
@@ -429,12 +428,6 @@ function drawNetwork(step) {
   const sans = getComputedStyle(document.body).fontFamily;
   const mono = "JetBrains Mono, ui-monospace, Consolas, monospace";
   const top = step ? step.top : [];
-
-  if (layers.chat) {
-    drawGalaxyFlow(canvas, step, info);
-    $("networkLabel").textContent = formatParams(info.params);
-    return;
-  }
 
   if (layers.transformer) {
     drawTransformerView(context, step, info, colors, sans, mono);
@@ -961,191 +954,6 @@ function layerAt(x, y) {
   if (x < NET.logits - NET.logitsHalf - 20) return "hidden";
   return "logits";
 }
-// ---------------------------------------------------------------- Galaxy: the whole path of one token
-// From top to bottom, the way the newest token travels through the model:
-// input tokens -> embedding x -> 8 blocks (attention, then MLP, each ADDS to x) -> logits -> probabilities.
-// Every "strip" is one vector: each thin cell is one number (accent = positive, red = negative,
-// brighter = bigger). Columns of the attention grids line up with the input tokens on top.
-const GW = 560;                               // logical width; the height depends on the number of blocks
-const GF = { labelRight: 80, left: 92, right: 546, top: 26, chipsH: 26, embedY: 84, blocksY: 118,
-             blockH: 136, stripH: 10, headRowH: 6 };
-
-function galaxyHeight(blockCount) {
-  return GF.blocksY + blockCount * GF.blockH + 160;
-}
-
-// which part of the drawing is under the mouse (for the explanation under the canvas)
-function galaxyPartAt(y, blockCount) {
-  if (y < GF.top + GF.chipsH + 8) return "g_input";
-  if (y < GF.blocksY - 4) return "g_embedding";
-  const blockIndex = Math.floor((y - GF.blocksY) / GF.blockH);
-  if (blockIndex >= blockCount) return "g_output";
-  const inside = (y - GF.blocksY) - blockIndex * GF.blockH;
-  if (inside < 16) return "g_block";
-  if (inside < 70) return "g_heads";
-  if (inside < 84) return "g_attention";
-  if (inside < 98) return "g_neurons";
-  if (inside < 112) return "g_mlp";
-  return "g_stream";
-}
-
-function drawStrip(context, values, x, y, width, height, positive, negative) {
-  let biggest = 1e-6;
-  for (const value of values) biggest = Math.max(biggest, Math.abs(value));
-  const cell = width / values.length;
-  for (let i = 0; i < values.length; i++) {
-    const strength = Math.abs(values[i]) / biggest;
-    if (strength < 0.04) continue;
-    context.fillStyle = rgba(values[i] >= 0 ? positive : negative, 0.15 + 0.85 * strength);
-    context.fillRect(x + i * cell, y, Math.max(cell, 0.6), height);
-  }
-  context.strokeStyle = "rgba(128,128,128,0.18)";
-  context.lineWidth = 0.5;
-  context.strokeRect(x, y, width, height);
-}
-
-function drawGalaxyFlow(canvas, step, info) {
-  const data = step && step.galaxy;
-  const blockCount = data ? data.blocks.length : (info.layers.blocks || 8);
-  const height = galaxyHeight(blockCount);
-  const pixelRatio = window.devicePixelRatio || 1;
-  const pixelWidth = Math.round(canvas.clientWidth * pixelRatio);
-  const pixelHeight = Math.round(pixelWidth * height / GW);
-  if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
-  if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
-  const context = canvas.getContext("2d");
-  context.setTransform(1, 0, 0, 1, 0, 0);
-  context.clearRect(0, 0, canvas.width, canvas.height);
-  context.setTransform(pixelWidth / GW, 0, 0, pixelWidth / GW, 0, 0);
-
-  if (!netColors) networkColors();
-  const colors = netColors;
-  const sans = getComputedStyle(document.body).fontFamily;
-  const mono = "JetBrains Mono, ui-monospace, Consolas, monospace";
-  const positive = hexToRgb(colors.accent.startsWith("#") ? colors.accent : "#a9a5ff");
-  const negative = hexToRgb("#ff8a70");
-  const width = GF.right - GF.left;
-  context.textBaseline = "middle";
-
-  function label(text, y, strong) {
-    context.textAlign = "right";
-    context.font = (strong ? "500 11px " : "10.5px ") + sans;
-    context.fillStyle = strong ? colors.text : colors.muted;
-    context.fillText(text, GF.labelRight, y);
-    context.textAlign = "left";
-  }
-
-  if (!data) {
-    context.fillStyle = colors.muted;
-    context.font = "13px " + sans;
-    context.textAlign = "center";
-    context.fillText("Send a message to watch a token travel through Galaxy.", GW / 2, 60);
-    context.textAlign = "left";
-    return;
-  }
-
-  // the residual stream: one line from the embedding to the output, every block adds to it
-  context.strokeStyle = rgba(positive, 0.35);
-  context.lineWidth = 1.5;
-  line(context, GF.labelRight + 6, GF.embedY + GF.stripH / 2, GF.labelRight + 6, GF.blocksY + blockCount * GF.blockH + 14);
-
-  // ---- input tokens
-  const tokens = data.tokens;
-  const columnWidth = width / 12;
-  const firstColumn = GF.left + (12 - tokens.length) * columnWidth;      // newest token always on the right
-  label("input", GF.top + GF.chipsH / 2, true);
-  context.font = "10.5px " + mono;
-  context.textAlign = "center";
-  for (let c = 0; c < tokens.length; c++) {
-    const x = firstColumn + c * columnWidth;
-    const newest = c === tokens.length - 1;
-    context.fillStyle = newest ? rgba(positive, 0.22) : colors.surface;
-    context.beginPath(); context.roundRect(x + 1.5, GF.top, columnWidth - 3, GF.chipsH, 5); context.fill();
-    let text = visibleChar(tokens[c]);
-    if (text.length > 5) text = text.slice(0, 4) + "…";
-    context.fillStyle = newest ? colors.text : colors.muted;
-    context.fillText(text, x + columnWidth / 2, GF.top + GF.chipsH / 2);
-  }
-  context.textAlign = "left";
-
-  // ---- embedding
-  label("embedding", GF.embedY + GF.stripH / 2, true);
-  drawStrip(context, data.embedding, GF.left, GF.embedY, width, GF.stripH, positive, negative);
-  context.font = "10px " + sans;
-  context.fillStyle = colors.faint || colors.muted;
-  context.fillText("x = token vector + position vector  ·  " + data.embedding.length + " numbers", GF.left, GF.embedY + 22);
-
-  // ---- blocks
-  for (let b = 0; b < blockCount; b++) {
-    const block = data.blocks[b];
-    const top = GF.blocksY + b * GF.blockH;
-    context.font = "500 11.5px " + sans;
-    context.fillStyle = colors.text;
-    context.fillText("Block " + (b + 1), GF.left, top + 6);
-    context.textAlign = "right";
-    context.font = "10.5px " + sans;
-    context.fillStyle = colors.muted;
-    context.fillText("attention changed x by " + Math.round(block.attention_change * 100) + "%  ·  MLP by " +
-                     Math.round(block.mlp_change * 100) + "%", GF.right, top + 6);
-    context.textAlign = "left";
-
-    // attention: 8 heads (rows) x the input tokens (columns, same as on top)
-    label("8 heads", top + 16 + (block.heads.length * GF.headRowH) / 2);
-    for (let h = 0; h < block.heads.length; h++) {
-      const row = block.heads[h];
-      const rowFirst = GF.left + (12 - row.length) * columnWidth;
-      for (let c = 0; c < row.length; c++) {
-        context.fillStyle = rgba(positive, 0.05 + 0.95 * Math.sqrt(row[c]));
-        context.fillRect(rowFirst + c * columnWidth + 1.5, top + 16 + h * GF.headRowH, columnWidth - 3, GF.headRowH - 1);
-      }
-    }
-    const stripsTop = top + 16 + block.heads.length * GF.headRowH + 8;
-    const strips = [["attention adds", block.attention], ["MLP neurons", block.neurons], ["MLP adds", block.mlp], ["x after", block.stream]];
-    for (let i = 0; i < strips.length; i++) {
-      const y = stripsTop + i * 14;
-      label(strips[i][0], y + GF.stripH / 2, i === 3);
-      drawStrip(context, strips[i][1], GF.left, y, width, GF.stripH, positive, negative);
-    }
-    // a dot on the stream line: here the block added its result to x
-    context.fillStyle = colors.accent;
-    context.beginPath(); context.arc(GF.labelRight + 6, stripsTop + 3 * 14 + GF.stripH / 2, 2.5, 0, 6.29); context.fill();
-  }
-
-  // ---- output: matching x with every token, then softmax
-  const outTop = GF.blocksY + blockCount * GF.blockH + 10;
-  label("output", outTop + 6, true);
-  context.font = "10.5px " + sans;
-  context.fillStyle = colors.muted;
-  context.fillText("final LayerNorm · x compared with all 2048 token vectors (logits) · softmax", GF.left, outTop + 6);
-  const top5 = step.top || [];
-  for (let i = 0; i < top5.length; i++) {
-    const y = outTop + 24 + i * 24;
-    const [token, probability] = top5[i];
-    const picked = token === step.char;
-    context.fillStyle = picked ? rgba(positive, 0.22) : colors.surface;
-    context.beginPath(); context.roundRect(GF.left, y, 92, 18, 5); context.fill();
-    context.font = "11px " + mono;
-    context.fillStyle = picked ? colors.text : colors.muted;
-    let text = visibleChar(token);
-    if (text.length > 11) text = text.slice(0, 10) + "…";
-    context.fillText(text, GF.left + 7, y + 9);
-    context.font = "10.5px " + mono;
-    context.fillStyle = colors.muted;
-    const score = step.scores ? step.scores[i].toFixed(1) : "";
-    context.fillText("score " + score, GF.left + 102, y + 9);
-    const barLeft = GF.left + 186, barWidth = width - 186 - 46;
-    context.fillStyle = colors.surface;
-    context.fillRect(barLeft, y + 6, barWidth, 6);
-    context.fillStyle = picked ? colors.accent : rgba(positive, 0.5);
-    context.fillRect(barLeft, y + 6, barWidth * probability, 6);
-    context.textAlign = "right";
-    context.fillStyle = colors.text;
-    context.fillText((probability * 100).toFixed(1) + "%", GF.right, y + 9);
-    context.textAlign = "left";
-  }
-  context.textBaseline = "alphabetic";
-}
-
 function showLayerNote(name) { $("layerNote").innerHTML = LAYER_INFO[name]; }
 
 $("network").addEventListener("mousemove", (event) => {
@@ -1156,18 +964,11 @@ $("network").addEventListener("mousemove", (event) => {
     showLayerNote(transformerPartAt(event.offsetX * scale, event.offsetY * scale, info).name);
     return;
   }
-  if (info && info.layers && info.layers.chat) {
-    const step = state.lastStep;
-    const blockCount = step && step.galaxy ? step.galaxy.blocks.length : 8;
-    showLayerNote(galaxyPartAt(event.offsetY * GW / canvas.clientWidth, blockCount));
-    return;
-  }
   showLayerNote(layerAt(event.offsetX * scale, event.offsetY * scale));
 });
 // Pulsar: click a block to see its attention on top
 $("network").addEventListener("click", (event) => {
   const info = state.available[state.current];
-  if (info && info.layers && info.layers.chat) return;
   if (!info || !info.layers || !info.layers.transformer) return;
   const scale = NET_W / $("network").clientWidth;
   const part = transformerPartAt(event.offsetX * scale, event.offsetY * scale, info);
@@ -1366,6 +1167,8 @@ async function send(prompt) {
 
   addUserMessage(prompt);
   const bot = addBotMessage(prompt);
+  flowReset();
+  activeCaret = bot.caret;
   scrollToBottom(true);
   setGenerating(true);
 
@@ -1394,6 +1197,7 @@ async function send(prompt) {
     const fragment = document.createDocumentFragment();
     const batch = [];
     for (const step of drawn) {
+      flowRecord(step);                                     // flow.js keeps them: ‹ › go back to earlier tokens
       count += 1;
       confidenceSum += step.prob;
       const span = document.createElement("span");
@@ -1466,7 +1270,8 @@ async function send(prompt) {
         history: isChatModel(state.current) ? history : [],
         visualize: panelOpen(),                              // the inside of Galaxy is only sent when you can see it
         temperature: parseFloat($("temperature").value),
-        max_chars: lengthValue >= 850 ? 0 : lengthValue,   // 0 = auto
+        max_chars: lengthValue >= 850 || isChatModel(state.current) ? 0 : lengthValue,   // 0 = auto
+        min_tokens: isChatModel(state.current) && lengthValue < 850 ? Math.round(lengthValue / 5) : 0,
         delay_ms: 0,                                         // the page sets the speed, see pump()
       }),
       signal: controller.signal,
@@ -1502,6 +1307,12 @@ async function send(prompt) {
             if (step.char === END_MARKER[0]) held.push(step);
             else show(step);
           }
+        } else if (step.type === "error") {
+          ending = "Error: " + step.message;               // e.g. out of GPU memory: the server says what broke
+          const note = document.createElement("span");
+          note.className = "error-note";
+          note.textContent = "⚠ " + step.message;
+          bot.text.insertBefore(note, bot.caret);
         } else if (step.type === "end_of_story") {
           held = [];                                       // the marker: throw it away
           if (step.remove) {
@@ -1539,7 +1350,10 @@ async function send(prompt) {
   showStats(count, confidenceSum, startTime, ending);
 
   bot.caret.remove();
+  activeCaret = null;
   // save the reply in the chat (without the faded echo of the prompt)
+  const errorNotes = [...bot.text.querySelectorAll(".error-note")];
+  for (const note of errorNotes) note.remove();          // errors are shown, but not saved as part of the reply
   const echo = bot.text.querySelector(".echo");
   const replyText = bot.text.textContent.slice(echo ? echo.textContent.length : 0);
   // keep the confidence colors: [text, level] pieces (plain text = sure, p4)
@@ -1550,6 +1364,7 @@ async function send(prompt) {
     else if (node.dataset && node.dataset.level) pieces.push([node.textContent, node.dataset.level]);
   }
   chat.messages.push({ role: "bot", text: replyText, pieces: pieces, model: state.current });
+  for (const note of errorNotes) bot.text.append(note);
   chat.updated = Date.now();
   saveChats();
   bot.avatar.classList.remove("thinking");
@@ -1692,7 +1507,8 @@ function bindSlider(id, format) {
 }
 bindSlider("speed", (ms) => (ms === 0 ? "max" : ms + " ms"));
 bindSlider("temperature", (t) => t.toFixed(2));
-bindSlider("length", (n) => (n >= 850 ? "Auto" : String(n)));
+// chat models: Auto = the reply ends when the model wants; otherwise = at least n/5 tokens
+bindSlider("length", (n) => (n >= 850 ? "Auto" : isChatModel(state.current) ? "≥" + Math.round(n / 5) + " tok" : String(n)));
 
 // brand mark: the Singularity icon, in the text color
 const brandIcon = makeIcon("Singularity", 18);
@@ -1994,12 +1810,13 @@ const TRAILS = {
   Spark:       { every: 0.07, speedX: [-6, 6],  speedY: [-24, -10], life: 0.8,  size: [1.0, 1.9], gravity: 0 },     // embers rise
   Nebula:      { every: 0.09, speedX: [-6, 6],  speedY: [-6, 6],    life: 1.0,  size: [2.2, 3.4], gravity: 0, soft: true }, // soft puffs
   Pulsar:      { every: 0.18, speedX: [0, 0],   speedY: [0, 0],     life: 0.8,  size: [1, 1],     gravity: 0, ring: true }, // a small ring
-  Galaxy:      { every: 0.08, speedX: [-7, 7],  speedY: [6, 16],    life: 0.8,  size: [0.8, 1.4], gravity: 12, star: true }, // little falling stars
-  Supernova:   { every: 0.07, speedX: [-22, 22], speedY: [-22, 22], life: 0.55, size: [0.8, 1.5], gravity: 0 },    // tiny bursts
+  Galaxy:      { every: 0.09, speedX: [-9, 9],  speedY: [8, 22],    life: 1.0,  size: [1.6, 2.6], gravity: 14, star: true }, // little falling stars
+  Supernova:   { every: 0.22, count: 6, speedX: [-34, 34], speedY: [-34, 34], life: 0.6, size: [1.1, 2.0], gravity: 0 }, // tiny bursts
   Singularity: { every: 0.08, speedX: [0, 0],   speedY: [0, 0],     life: 0.75, size: [0.8, 1.4], gravity: 0, orbit: true }, // pulled in
 };
 const sparks = [];
 let lastSparkTime = 0;
+let activeCaret = null;              // the cursor of the reply being written: it sparkles even between tokens
 
 function emitFromCaret(caret) {
   if (cosmos.reducedMotion || !caret || !caret.isConnected || !cosmos.model) return;
@@ -2009,7 +1826,7 @@ function emitFromCaret(caret) {
   lastSparkTime = now;
   const box = caret.getBoundingClientRect();
   if (box.width === 0) return;
-  for (let i = 0; i < 1; i++) {
+  for (let i = 0; i < (trail.count || 1); i++) {
     if (sparks.length > 32) sparks.shift();
     sparks.push({
       x: box.left + box.width / 2, y: box.top + box.height / 2,
@@ -2082,6 +1899,7 @@ function drawCosmosFrame(delta) {
   context.setTransform(cosmos.ratio, 0, 0, cosmos.ratio, 0, 0);
   context.clearRect(0, 0, cosmos.width, cosmos.height);
   if (cosmos.scene) cosmos.scene.draw(context, delta);
+  if (activeCaret) emitFromCaret(activeCaret);
   drawSparks(context, delta);
 }
 

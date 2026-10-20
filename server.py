@@ -9,11 +9,14 @@ then open http://localhost:8000
 import json
 import os
 import time
+import traceback
+from urllib.parse import urlparse, parse_qs
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 
 import numpy as np
 
-from alexgpt.chat import load_models, generate_stream
+from alexgpt.chat import load_models, generate_stream, split_into_tokens
+from alexgpt.training_view import read_log, DataPeek
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 WEB_DIR = os.path.join(PROJECT_ROOT, "web")
@@ -24,16 +27,31 @@ STATIC_FILES = {
     "/index.html": ("index.html", "text/html; charset=utf-8"),
     "/style.css": ("style.css", "text/css; charset=utf-8"),
     "/app.js": ("app.js", "application/javascript; charset=utf-8"),
+    "/flow.js": ("flow.js", "application/javascript; charset=utf-8"),
+    "/training.js": ("training.js", "application/javascript; charset=utf-8"),
+    "/tokens.js": ("tokens.js", "application/javascript; charset=utf-8"),
 }
 
 print("Loading models...")
 MODELS = load_models(PROJECT_ROOT)
 rng = np.random.default_rng()
+data_peek = DataPeek(PROJECT_ROOT)
 
 
 class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
+        url = urlparse(self.path)
+        if url.path == "/api/training":                  # the Live training page asks every few seconds
+            self.send_json(read_log(PROJECT_ROOT, parse_qs(url.query).get("run", ["supernova"])[0]))
+            return
+        if url.path == "/api/training/peek":             # a random document from the training data
+            try:
+                self.send_json(data_peek.peek(parse_qs(url.query).get("source", [None])[0]))
+            except Exception as error:
+                self.send_json({"error": f"{type(error).__name__}: {error}"})
+            return
+
         if self.path == "/api/models":
             model_list = []
             for name in MODELS:
@@ -64,6 +82,14 @@ class Handler(BaseHTTPRequestHandler):
         self.send_error(404)
 
     def do_POST(self):
+        if self.path == "/api/tokenize":                  # "Show tokens": how a model cuts a text into tokens
+            length = int(self.headers.get("Content-Length", 0))
+            request = json.loads(self.rfile.read(length))
+            if request.get("model") not in MODELS:
+                self.send_json({"error": "unknown model"}, status=400)
+                return
+            self.send_json({"tokens": split_into_tokens(MODELS[request["model"]][0], request.get("text", ""))})
+            return
         if self.path != "/api/generate":
             self.send_error(404)
             return
@@ -92,12 +118,20 @@ class Handler(BaseHTTPRequestHandler):
 
         try:
             history = request.get("history") or []          # earlier messages of this chat (chat models only)
-            for step in generate_stream(model, prompt, max_chars, temperature, rng, history, bool(request.get("visualize"))):
+            for step in generate_stream(model, prompt, max_chars, temperature, rng, history, bool(request.get("visualize")),
+                                       int(request.get("min_tokens", 0))):
                 self.write_event(step)
                 time.sleep(delay_seconds)
             self.write_event({"type": "done"})
         except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError):
             pass    # the user pressed stop and closed the connection
+        except Exception as error:
+            # anything else (e.g. the GPU ran out of memory): print it here AND show it in the chat
+            traceback.print_exc()
+            try:
+                self.write_event({"type": "error", "message": f"{type(error).__name__}: {error}"})
+            except OSError:
+                pass
 
     def write_event(self, data):
         self.wfile.write(("data: " + json.dumps(data) + "\n\n").encode("utf-8"))
