@@ -49,7 +49,7 @@ function drawTraining() {
   }
   const ago = data.seconds_since_update;
   const agoText = ago < 90 ? ago + " s ago" : ago < 5400 ? Math.round(ago / 60) + " min ago" : Math.round(ago / 3600) + " h ago";
-  $("trStatus").innerHTML = (data.running ? '<span class="tr-dot on"></span>Training now' : '<span class="tr-dot"></span>Not running') +
+  $("trStatus").innerHTML = (data.running ? '<span class="tr-dot on"></span>Training now' : data.step >= (data.total_steps || 1) * 0.995 ? '<span class="tr-dot done"></span>Finished' : '<span class="tr-dot"></span>Not running') +
     " · last line " + agoText;
 
   const tokensPerStep = 131072;
@@ -79,7 +79,7 @@ function drawTraining() {
 }
 
 // ---------------------------------------------------------------- loss chart (one y axis, log scale)
-const CHART = { W: 760, H: 280, left: 44, right: 16, top: 14, bottom: 30, low: 2, high: 10 };
+const CHART = { W: 760, H: 280, left: 44, right: 70, top: 14, bottom: 30, low: 2, high: 10 };
 
 function chartX(step) {
   const total = TRAIN.data.total_steps || 1;

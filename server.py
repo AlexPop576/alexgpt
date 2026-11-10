@@ -1,5 +1,5 @@
 """
-AlexGPT web server. Uses only the Python standard library.
+CosmosLM web server. Uses only the Python standard library.
 
 Run from the project root:
     python server.py
@@ -30,6 +30,7 @@ STATIC_FILES = {
     "/flow.js": ("flow.js", "application/javascript; charset=utf-8"),
     "/training.js": ("training.js", "application/javascript; charset=utf-8"),
     "/tokens.js": ("tokens.js", "application/javascript; charset=utf-8"),
+    "/intros.js": ("intros.js", "application/javascript; charset=utf-8"),
 }
 
 print("Loading models...")
@@ -154,7 +155,7 @@ if __name__ == "__main__":
     # python server.py --network : also reachable from your other devices (e.g. the laptop through Tailscale)
     host = "0.0.0.0" if "--network" in sys.argv else "localhost"
     server = ThreadingHTTPServer((host, PORT), Handler)
-    print(f"\nAlexGPT is running at http://localhost:{PORT}  (Ctrl+C to stop)")
+    print(f"\nCosmosLM is running at http://localhost:{PORT}  (Ctrl+C to stop)")
     if host != "localhost":
         import socket
         print(f"from your other devices: http://{socket.gethostname()}:{PORT}  (same Tailscale network)")

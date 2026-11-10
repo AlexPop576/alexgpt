@@ -321,6 +321,7 @@ textarea::placeholder { color: var(--text-faint); }
 
 .inside {
   position: relative;
+  flex-shrink: 0;
   width: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -366,8 +367,10 @@ body.resizing-panel, body.resizing-panel * { cursor: ew-resize !important; }
 .note.tight { margin-top: 2px; }
 .legend { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 
-.context { display: flex; gap: 4px; min-height: 36px; }
+.context { display: flex; flex-wrap: wrap; gap: 4px; min-height: 36px; }
+.context:has(> :nth-child(13)) .ctx { width: 22px; height: 28px; font-size: 12px; border-radius: 6px; }
 .ctx {
+  flex: none;
   width: 30px;
   height: 36px;
   display: grid;
@@ -526,6 +529,7 @@ body {
 .inside { background: color-mix(in srgb, var(--surface) 90%, transparent); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); }
 .chip { background: color-mix(in srgb, var(--surface) 75%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 .chip:hover { border-color: color-mix(in srgb, var(--accent) 50%, var(--border)); }
+[data-theme="light"] .user-bubble { background: #ecebe7; }
 .user-bubble { background: color-mix(in srgb, var(--surface-2) 85%, transparent); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
 
 /* the message box has a thin ring of light that travels around it, like something in orbit;
@@ -557,7 +561,7 @@ body {
 .composer.writing .composer-box::before { opacity: 1; animation-duration: 2.6s; }
 @keyframes orbit { to { --orbit-angle: 360deg; } }
 
-/* brand: AlexGPT + a small "Cosmos" tag in the model's color */
+/* brand: CosmosLM */
 .brand-tag {
   font-size: 10.5px;
   font-weight: 600;
@@ -615,14 +619,15 @@ body {
 }
 
 @media (max-width: 860px) {
-  .inside.open { position: fixed; right: 0; top: 55px; bottom: 0; z-index: 10; }
+  .inside.open { position: fixed; right: 0; top: 55px; bottom: 0; z-index: 10; width: min(var(--panel-width, 460px), 100vw); }
+  .inside-content { width: min(var(--panel-width, 460px), 100vw); }
   .icon-button span { display: none; }
   .model-menu { width: 290px; }
 }
 
 /* ---------------------------------------------------------------- chat models (Galaxy+): tokens are pieces of words */
 html[data-chat="1"] .context { flex-wrap: wrap; }
-html[data-chat="1"] .ctx { width: auto; min-width: 30px; height: 30px; padding: 0 7px; font-size: 13px; white-space: pre; }
+html[data-chat="1"] .context .ctx { width: auto; min-width: 30px; height: 30px; padding: 0 7px; font-size: 13px; white-space: pre; }
 html[data-chat="1"] .chosen-char { width: auto; min-width: 50px; padding: 0 12px; font-size: 20px; white-space: pre; }
 html[data-chat="1"] .bar-row { grid-template-columns: 96px 1fr 46px; }
 html[data-chat="1"] .bar-label { text-align: left; white-space: pre; overflow: hidden; text-overflow: ellipsis; }
@@ -727,7 +732,7 @@ html[data-chat="1"] #nextSection { display: none; }
 .fl-tok.slot .q { position: absolute; inset: 0; display: grid; place-items: center; opacity: 0; }
 
 .fl-cols, .fl-row { display: grid; grid-template-columns: 22px 92px 58px minmax(0, 1fr); gap: 10px; align-items: center; }
-.fl-cols { color: var(--text-faint); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; padding: 0 6px 6px; }
+.fl-cols { white-space: nowrap; color: var(--text-faint); font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.05em; padding: 0 6px 6px; }
 .fl-cols span[data-tip] { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
 .fl-row { padding: 4px 6px; border-radius: 8px; cursor: pointer; position: relative; }
 .fl-row:hover { background: var(--surface-2); }
@@ -742,10 +747,10 @@ html[data-chat="1"] #nextSection { display: none; }
 .fl-change i.a { background: var(--accent); }
 .fl-change i.m { background: var(--text-faint); }
 .fl-guess { display: flex; align-items: baseline; gap: 6px; min-width: 0; white-space: nowrap; overflow: hidden; }
-.fl-guess b { font-family: var(--mono); font-weight: 500; color: var(--text); white-space: pre; background: var(--surface-2); padding: 1px 6px; border-radius: 5px; }
+.fl-guess b { flex-shrink: 1; min-width: 4ch; max-width: 11ch; overflow: hidden; text-overflow: ellipsis; font-family: var(--mono); font-weight: 500; color: var(--text); white-space: pre; background: var(--surface-2); padding: 1px 6px; border-radius: 5px; }
 .fl-guess b.match { color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, transparent); }
-.fl-pct { color: var(--text-muted); font-variant-numeric: tabular-nums; font-size: 11.5px; }
-.fl-alt { color: var(--text-faint); font-family: var(--mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
+.fl-pct { flex-shrink: 0; color: var(--text-muted); font-variant-numeric: tabular-nums; font-size: 11.5px; }
+.fl-alt { min-width: 0; color: var(--text-faint); font-family: var(--mono); font-size: 10.5px; overflow: hidden; text-overflow: ellipsis; white-space: pre; }
 .fl-badge {
   margin-left: auto; flex-shrink: 0; font-size: 10px; padding: 2px 6px; border-radius: 10px;
   color: var(--accent); border: 1px solid color-mix(in srgb, var(--accent) 50%, transparent);
@@ -890,10 +895,12 @@ html[data-chat="1"] #nextSection { display: none; }
 .tr-top h2 { margin: 0 0 4px; font-size: 21px; font-weight: 600; letter-spacing: -0.01em; }
 .tr-status { color: var(--text-muted); font-size: 13px; }
 .tr-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--text-faint); margin-right: 7px; }
+.tr-dot.done { background: var(--accent); }
 .tr-dot.on { background: #3fbf7f; box-shadow: 0 0 0 3px color-mix(in srgb, #3fbf7f 25%, transparent); }
 .tr-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 14px; }
 .tr-stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
 .tr-value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.tr-value { white-space: nowrap; }
 .tr-of { font-size: 13px; color: var(--text-faint); font-weight: 400; }
 .tr-label { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
 .tr-progress { margin-bottom: 22px; }
@@ -969,3 +976,53 @@ html[data-chat="1"] #nextSection { display: none; }
 .bpe.unknown { background: transparent; outline: 1px dashed var(--p0); color: var(--p0); text-decoration: line-through; }
 .bpe-count { font-size: 11.5px; color: var(--text-faint); margin-top: 6px; font-family: var(--font); }
 .user-bubble .bpe-count { color: var(--text-muted); }
+
+/* ---------------------------------------------------------------- first-use popup (one per model, app.js showIntro) */
+.intro {
+  position: absolute; left: 50%; bottom: calc(100% - 4px); z-index: 20;
+  width: min(420px, calc(100% - 32px)); transform: translate(-50%, 8px); opacity: 0;
+  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
+  pointer-events: auto;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  border-radius: 16px; box-shadow: var(--shadow); padding: 14px 16px 14px;
+}
+.intro.show { opacity: 1; transform: translate(-50%, 0); }
+.intro::after {                       /* the small arrow pointing at the message box */
+  content: ""; position: absolute; left: 50%; bottom: -7px; width: 12px; height: 12px; transform: translateX(-50%) rotate(45deg);
+  background: inherit; border-right: inherit; border-bottom: inherit;
+}
+.intro-head { display: flex; align-items: center; gap: 10px; }
+.intro-icon { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none;
+  background: color-mix(in srgb, var(--accent) 14%, transparent); }
+.intro-name { font-weight: 600; font-size: 15px; }
+.intro-kind { font-size: 12px; color: var(--text-muted); }
+.intro-close { margin-left: auto; align-self: flex-start; background: none; border: 0; color: var(--text-faint); cursor: pointer; padding: 4px; border-radius: 6px; }
+.intro-close:hover { color: var(--text); background: var(--surface-2); }
+.intro-what { margin: 10px 0 6px; font-size: 13.5px; line-height: 1.5; }
+.intro-points { margin: 0 0 12px; padding-left: 18px; font-size: 13px; line-height: 1.55; color: var(--text-muted); }
+.intro-points li::marker { color: var(--accent); }
+.intro-actions { display: flex; gap: 8px; align-items: center; justify-content: flex-end; flex-wrap: wrap; }
+.intro-try, .intro-ok { font: inherit; font-size: 12.5px; border-radius: 9px; padding: 6px 11px; cursor: pointer; }
+.intro-try { margin-right: auto; background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.intro-try b { color: var(--text); font-weight: 500; }
+.intro-try:hover { border-color: var(--accent); }
+.intro-ok { background: var(--accent); color: var(--bg); border: 0; font-weight: 600; }
+
+/* a narrow panel (e.g. 320 px): the block rows keep the guess and its %, drop the 2nd/3rd guesses, "decided" becomes a dot */
+.flow { container-type: inline-size; }
+@container (max-width: 400px) {
+  .fl-cols, .fl-row { grid-template-columns: 20px 64px 40px minmax(0, 1fr); gap: 8px; }
+  .fl-heat { width: 64px; }
+  .fl-alt { display: none; }
+  .fl-badge { font-size: 0; width: 8px; height: 8px; padding: 0; border-radius: 50%; background: var(--accent); border: 0; }
+}
+
+/* phone: the placeholder stays on one line (it wrapped and showed a scrollbar in the 1-row box) */
+#input::placeholder { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 480px) {
+  .composer { padding: 8px 12px 14px; }
+  .composer-box { padding-left: 14px; }
+}
+.intro-hint { margin-top: 8px; font-size: 11px; color: var(--text-faint); text-align: right; }

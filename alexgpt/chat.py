@@ -1076,8 +1076,9 @@ def generate_core(model, prompt, max_chars, temperature, rng, history=None, visu
 
         if is_chat:
             context_chars = [model.chars[context_id] for context_id in context_ids[-32:]]   # one chip per token
-            if len(generated_text) == len(next_char):
-                next_char = next_char.lstrip(" ")       # the reply should not start with a space
+            # a chat reply should not start with a space; a base model (Nova) continues your text, so it keeps it
+            if len(generated_text) == len(next_char) and type(model) is not SupernovaBase:
+                next_char = next_char.lstrip(" ")
         else:
             context_chars = ""
             for context_id in context_ids:

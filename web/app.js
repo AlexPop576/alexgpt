@@ -1,4 +1,4 @@
-// AlexGPT interface: talks to server.py and draws what the model does.
+// CosmosLM interface: talks to server.py and draws what the model does.
 
 // Small line icons, one per model (18x18, drawn with strokes).
 const ICONS = {
@@ -24,9 +24,9 @@ const FAMILY = [
   { name: "Nebula",      dark: "#e9a6dc", light: "#a1408c", note: "MLP · sees 8 characters" },
   { name: "Pulsar",      dark: "#7fd8ea", light: "#1d8199", note: "Transformer · sees 32 characters" },
   { name: "Galaxy",      dark: "#a9a5ff", light: "#5650d4", note: "GPU · BPE · conversations" },
-  { name: "Nova",        dark: "#ff8fa3", light: "#c23a55", note: "Supernova before SFT: continues your text" },
+  { name: "Nova",        dark: "#ff8fa3", light: "#c23a55", note: "Supernova before SFT: continues your text", continues: true },
   { name: "Supernova",   dark: "#ff9d6e", light: "#cc5326", note: "Answers you, EN + RO" },
-  { name: "Singularity Base", dark: "#c9c5ff", light: "#4a3f8f", note: "Singularity before SFT: continues your text" },
+  { name: "Singularity Base", dark: "#c9c5ff", light: "#4a3f8f", note: "Singularity before SFT: continues your text", continues: true },
   { name: "Singularity", dark: "#e6e3ff", light: "#2c2548", note: "Answers your questions" },
 ];
 
@@ -147,7 +147,9 @@ async function loadModels() {
   if (saved && state.available[saved]) {
     selectModel(saved);
   } else {
-    selectModel(list[list.length - 1].name);   // newest model by default
+    let newest = list[list.length - 1].name;    // the newest model of the family that the server has
+    for (const entry of FAMILY) if (state.available[entry.name]) newest = entry.name;
+    selectModel(newest);
   }
 }
 
@@ -194,6 +196,13 @@ function buildMenu() {
     option.addEventListener("click", () => {
       selectModel(entry.name);
       $("modelPicker").classList.remove("open");
+    });
+    option.title = "Hold to see what " + entry.name + " is";
+    onLongPress(option, () => {
+      if (!state.available[entry.name]) return;
+      selectModel(entry.name);
+      $("modelPicker").classList.remove("open");
+      showIntro(entry.name, true);
     });
     menu.append(option);
   }
@@ -243,6 +252,76 @@ function selectModel(name) {
   const hasWeights = info.layers && info.layers.hidden > 0 && !info.layers.transformer;
   $("weightsToggle").closest("label").style.visibility = hasWeights ? "visible" : "hidden";
   drawNetwork(null);
+  showIntro(name, false);
+}
+
+// ---------------------------------------------------------------- hold to see the model's info card
+// pointerdown starts a timer; if the button is still held after 450 ms, callback() runs and the click that
+// follows (when the finger / mouse is released) is swallowed, so the menu does not open or close by accident.
+const LONG_PRESS_MS = 450;
+function onLongPress(element, callback) {
+  let timer = null;
+  let fired = false;
+  const cancel = () => { clearTimeout(timer); timer = null; };
+  element.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    fired = false;
+    cancel();
+    timer = setTimeout(() => { fired = true; timer = null; callback(); }, LONG_PRESS_MS);
+  });
+  element.addEventListener("pointerup", cancel);
+  element.addEventListener("pointerleave", cancel);
+  element.addEventListener("pointercancel", cancel);
+  element.addEventListener("contextmenu", (event) => { if (timer || fired) event.preventDefault(); });   // phones: no menu on hold
+  element.addEventListener("click", (event) => {
+    if (!fired) return;
+    fired = false;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }, true);
+}
+
+// ---------------------------------------------------------------- first-use popup (texts: intros.js)
+// Shown once per model, above the message box. localStorage remembers "alexgpt-intro-<model>" = "seen".
+function showIntro(name, force) {
+  const box = $("intro");
+  const intro = typeof MODEL_INTROS !== "undefined" ? MODEL_INTROS[name] : null;
+  if (!intro || (!force && loadPreference("alexgpt-intro-" + name) === "seen")) {
+    box.hidden = true;
+    return;
+  }
+  let points = "";
+  for (const point of intro.points) points += "<li>" + escapeHtml(point) + "</li>";
+  box.innerHTML =
+    '<div class="intro-head"><span class="intro-icon"></span><div>' +
+    '<div class="intro-name" id="introName">' + escapeHtml(name) + "</div>" +
+    '<div class="intro-kind">' + escapeHtml(intro.kind) + "</div></div>" +
+    '<button type="button" class="intro-close" aria-label="Close">' +
+    '<svg width="12" height="12" viewBox="0 0 14 14" aria-hidden="true"><path d="M3 3l8 8M11 3l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></button></div>' +
+    '<p class="intro-what">' + escapeHtml(intro.what) + "</p>" +
+    '<ul class="intro-points">' + points + "</ul>" +
+    '<div class="intro-actions">' +
+    (intro.tryText ? '<button type="button" class="intro-try">Try: <b>' + escapeHtml(intro.tryText) + "</b></button>" : "") +
+    '<button type="button" class="intro-ok">Got it</button></div>' +
+    '<div class="intro-hint">Hold the model button to see this again.</div>';
+  box.querySelector(".intro-icon").append(makeIcon(name, 22));
+
+  const close = () => {
+    savePreference("alexgpt-intro-" + name, "seen");
+    box.classList.remove("show");
+    setTimeout(() => { if (!box.classList.contains("show")) box.hidden = true; }, 200);
+  };
+  box.querySelector(".intro-close").addEventListener("click", close);
+  box.querySelector(".intro-ok").addEventListener("click", close);
+  const tryButton = box.querySelector(".intro-try");
+  if (tryButton) tryButton.addEventListener("click", () => {
+    $("input").value = intro.tryText;
+    $("input").dispatchEvent(new Event("input"));
+    close();
+    $("input").focus();
+  });
+  box.hidden = false;
+  requestAnimationFrame(() => box.classList.add("show"));
 }
 
 // ---------------------------------------------------------------- theme
@@ -1057,7 +1136,8 @@ function addBotMessage(prompt) {
   const echo = document.createElement("span");
   echo.className = "echo";
   echo.textContent = prompt.length > 28 ? "…" + prompt.slice(-28) : prompt;
-  if (isChatModel(state.current)) echo.textContent = "";   // a chat model answers, it does not continue your text
+  // a chat model answers, it does not continue your text (Nova and Singularity Base do: they are not chat-trained)
+  if (isChatModel(state.current) && !familyEntry(state.current).continues) echo.textContent = "";
   const caret = document.createElement("span");
   caret.className = "caret";
   text.append(echo, caret);
@@ -1402,6 +1482,7 @@ function applyMarkdown(container, pieces) {
 
 async function send(prompt) {
   if (!state.current) return;
+  if (!$("intro").hidden) $("intro").querySelector(".intro-ok").click();   // writing a message = "got it"
   const chat = ensureChat(prompt);
   const history = [];                              // what was said before in this chat (chat models read it)
   for (const turn of chat.messages) history.push({ role: turn.role, text: turn.text });
@@ -1661,6 +1742,10 @@ async function send(prompt) {
   if (sources.length) savedTurn.sources = sources;
   chat.messages.push(savedTurn);
   applyMarkdown(bot.text, pieces);
+  if (echo && echo.textContent) {
+    const firstBlock = bot.text.firstElementChild;
+    (firstBlock && firstBlock.tagName === "P" ? firstBlock : bot.text).prepend(echo);
+  }
   for (const note of errorNotes) bot.text.append(note);
   chat.updated = Date.now();
   saveChats();
@@ -1715,6 +1800,11 @@ $("modelButton").addEventListener("click", (event) => {
   event.stopPropagation();
   $("modelPicker").classList.toggle("open");
 });
+// hold the model button: the info card of the current model opens again
+onLongPress($("modelButton"), () => {
+  $("modelPicker").classList.remove("open");
+  showIntro(state.current, true);
+});
 document.addEventListener("click", (event) => {
   if (!$("modelPicker").contains(event.target)) $("modelPicker").classList.remove("open");
 });
@@ -1741,6 +1831,7 @@ $("panelToggle").addEventListener("click", () => {
 });
 // ---- drag the left edge of the visualisation panel to resize it
 const PANEL_MIN = 320;
+let wantedPanelWidth = 460;                // what the user picked; the real width may be smaller on a small window
 function setPanelWidth(width) {
   const maximum = Math.max(PANEL_MIN, window.innerWidth - 380);   // always leave room for the chat
   const clamped = Math.round(Math.min(maximum, Math.max(PANEL_MIN, width)));
@@ -1766,18 +1857,26 @@ $("resizeHandle").addEventListener("pointerup", () => {
   $("insidePanel").classList.remove("resizing");
   document.body.classList.remove("resizing-panel");
   const width = parseInt(getComputedStyle(document.documentElement).getPropertyValue("--panel-width"));
+  wantedPanelWidth = width;
   savePreference("alexgpt-panel-width", String(width));
 });
 $("resizeHandle").addEventListener("dblclick", () => {             // double click: back to the default size
+  wantedPanelWidth = 460;
   setPanelWidth(460);
   savePreference("alexgpt-panel-width", "460");
   drawNetwork(state.lastStep);
 });
-setPanelWidth(parseInt(loadPreference("alexgpt-panel-width")) || 460);
-window.addEventListener("resize", () => drawNetwork(state.lastStep));
+wantedPanelWidth = parseInt(loadPreference("alexgpt-panel-width")) || 460;
+setPanelWidth(wantedPanelWidth);
+window.addEventListener("resize", () => {
+  setPanelWidth(wantedPanelWidth);              // e.g. the page opened in a small window, then got bigger
+  drawNetwork(state.lastStep);
+});
 $("insidePanel").addEventListener("transitionend", () => drawNetwork(state.lastStep));
 
-if (loadPreference("alexgpt-panel") !== "closed") {
+// open by default on a big screen; on a phone the panel would cover the whole chat, so it starts closed there
+const savedPanel = loadPreference("alexgpt-panel");
+if (savedPanel === "open" || (savedPanel === null && window.innerWidth > 860)) {
   $("insidePanel").classList.add("open");
   $("panelToggle").classList.add("active");
 }
