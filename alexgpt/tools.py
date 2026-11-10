@@ -143,6 +143,8 @@ def convert(value, from_unit, to_unit):
 
 _WIKI_PAGES = {}        # search -> (title, article text): the same question twice asks Wikipedia once
 LAST_WIKI = {}          # details of the last good wiki() result, for the app: title, url, a longer text ("long")
+# Wikimedia asks every program for a way to contact its author: the project page (fewer "busy" answers)
+USER_AGENT = "CosmosLM/1.0 (https://github.com/AlexPop576/alexgpt; student project)"
 WIKI_DEADLINE = 15      # seconds: a wiki() call that takes longer says "Wikipedia is busy" instead of waiting
 LAST_SEARCH = {}        # how the last wiki() decided, for the Explore page: every search result with kept/why, the scored sentences
                         # (only written, never read here: wiki()'s result is the same with or without it)
@@ -229,12 +231,13 @@ def _search_candidates(get, language, query):
     key = f"search|{language}|{query.lower()}"
     if key not in _WIKI_PAGES:
         pages = get({"action": "query", "generator": "search", "gsrsearch": query, "gsrlimit": 5,
-                     "prop": "extracts|redirects", "exintro": 1, "explaintext": 1, "exlimit": 5,
+                     "prop": "extracts|redirects|pageprops", "ppprop": "wikibase_item", "exintro": 1, "explaintext": 1, "exlimit": 5,
                      "rdlimit": "max", "rdprop": "title"}).get("query", {}).get("pages", {})
         candidates = []
         for page in pages.values():
             candidates.append({"title": page.get("title", ""), "intro": page.get("extract", "").strip(),
-                               "aliases": [r["title"] for r in page.get("redirects", [])], "rank": page.get("index", 99)})
+                               "aliases": [r["title"] for r in page.get("redirects", [])], "rank": page.get("index", 99),
+                               "item": page.get("pageprops", {}).get("wikibase_item")})       # its Wikidata id, e.g. Q83186
         candidates.sort(key=lambda c: c["rank"])
         if len(_WIKI_PAGES) > 300:
             _WIKI_PAGES.clear()
@@ -340,7 +343,7 @@ def wiki(query, language="en", max_chars=MAX_RESULT_CHARS):
     "Orbit of the Moon" -> "long") are the question; the sentences with the most of them win.  No such words -> the intro.
     Errors: "error: nothing found for 'xyz'", "error: no internet"."""
     LAST_WIKI.clear()
-    headers = {"User-Agent": "CosmosLM-student-project/1.0 (educational)"}
+    headers = {"User-Agent": USER_AGENT}
     query = query.strip()
     if not query:
         return "error: nothing found for ''"
@@ -385,6 +388,7 @@ def wiki(query, language="en", max_chars=MAX_RESULT_CHARS):
         if chosen is None:
             return "error: no article mentions " + " and ".join(entities)
         title, aliases = chosen["title"], chosen["aliases"]
+        item = chosen.get("item")                       # the article's Wikidata id, for wikidata.fact_for() below
         title_stems = {_stem(fold(word)) for word in _terms(title + " " + " ".join(aliases[:60]))}
         asks_more = [word for word in _terms(query) if _stem(fold(word)) not in title_stems]
         if asks_more or len(chosen["intro"]) < 300:
@@ -476,6 +480,19 @@ def wiki(query, language="en", max_chars=MAX_RESULT_CHARS):
         if len(passage) + len(sentence) > room and passage:
             break
         passage += (" " if passage else "") + sentence
+    # Wikidata: the exact fact the question asks for ("who wrote" -> author), first, so the model copies it
+    fact = None
+    if item and WIKI_DEADLINE - (time.time() - started) > 3:
+        try:
+            from alexgpt import wikidata
+            fact = wikidata.fact_for(item, title, query, language, USER_AGENT, entities)
+        except Exception:
+            fact = None                                 # Wikidata must never break the Wikipedia answer
+    if fact:
+        passage = fact["sentence"] + " " + passage
+        if len(passage) > room:
+            passage = passage[:max(room, 0)].rsplit(" ", 1)[0] + "…"
+    LAST_SEARCH["fact"] = fact
     long_text = ""
     for paragraph in long_parts:
         if len(long_text) > 1600:
@@ -500,7 +517,7 @@ def weather(city):
     &daily=temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto.
     weather_code is a number (0 clear, 1-3 cloudy, 45 fog, 51-67 rain, 71-77 snow, 95 storm): turn it into words.
     Errors: "error: city 'xyz' not found", "error: no internet"."""
-    headers = {"User-Agent": "CosmosLM-student-project/1.0 (educational)"}
+    headers = {"User-Agent": USER_AGENT}
     city = city.strip()
     if not city:
         return "error: city '' not found"
@@ -662,7 +679,7 @@ def today_in_history(month=0, day=0, language="en"):
     language = "ro" if language == "ro" else "en"
     url = f"https://api.wikimedia.org/feed/v1/wikipedia/{language}/onthisday/events/{month:02d}/{day:02d}"
     try:
-        request = urllib.request.Request(url, headers={"User-Agent": "CosmosLM-student-project/1.0 (educational)"})
+        request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
         events = json.load(urllib.request.urlopen(request, timeout=15)).get("events", [])
     except (urllib.error.URLError, OSError, TimeoutError):
         return "error: no internet"

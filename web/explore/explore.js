@@ -1415,7 +1415,9 @@ function buildRealToolBoard() {
     left += callBox(1);
     const names = search.names && search.names.length ? "must contain “" + search.names.map(esc).join("”, “") + "”" : "your question names nobody, so all are allowed";
     const rows = (search.results || []).map((result, index) => '<div class="res" id="res-' + index + '"><span class="m">' + (index + 1) + "</span><b>" + esc(result.title) + "</b><small></small></div>").join("");
-    left += '<div class="sec" id="tSec2">' + label(2, "Search results · " + names) + (rows || '<div class="note">Wikipedia returned no article for this.</div>') + "</div>";
+    left += '<div class="sec" id="tSec2">' + label(2, "Search results · " + names) + (rows || '<div class="note">Wikipedia returned no article for this.</div>') +
+      (search.fact ? '<div class="weather" style="margin-top:12px;font-size:19px"><span class="deg" style="font-size:26px">WD</span><span><b>Wikidata</b> (the exact fact, put first): ' +
+        esc(search.fact.sentence) + "</span></div>" : "") + "</div>";
     if (search.sentences && search.sentences.length) {
       const best = Math.max(1, ...search.sentences.map((item) => item[1]));
       const sentences = search.sentences.map(([text, points], index) => '<div class="sent" id="sent-' + index + '"><span class="score"><i data-w="' + Math.round((points / best) * 100) +
