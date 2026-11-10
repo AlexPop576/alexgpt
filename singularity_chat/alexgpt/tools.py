@@ -256,6 +256,21 @@ def names_together(entities, names, text):
     return False
 
 
+def title_in_question(title, query):
+    """Is the question ABOUT this article?  The whole title is written in the question word for word, and at most one
+    other word of the question is left ('wrote').  'Romeo and Juliet' for 'who wrote Romeo and Juliet' -> True;
+    'Romeo + Juliet' or 'Romeo and Juliet (1968 film)' -> False (a film, not what was asked);
+    'Republica Moldova' for 'ce limbă oficială se vorbește în Republica Moldova' -> False (the question asks more:
+    'Limbile Republicii Moldova' is the better article).  A title of small words only ('Who', 'The') never counts."""
+    if not _terms(title):
+        return False
+    title_stems = {_stem(fold(word)) for word in _terms(title)}
+    if len([word for word in _terms(query) if _stem(fold(word)) not in title_stems]) > 1:
+        return False
+    words = lambda text: " ".join(re.findall(r"[^\W_]+|[+&]", fold(text)))
+    return re.search(r"(?:^| )" + re.escape(words(title)) + r"(?: |$)", words(query)) is not None
+
+
 def _choose_article(candidates, query, entities):
     """The best of the 5 articles.  An article is allowed only if its title + other names + intro contain EVERY
     name of the question ('Napoleon' and 'Cluj' -> 'Marie of Romania' is refused).  Among the allowed ones:
@@ -275,6 +290,8 @@ def _choose_article(candidates, query, entities):
         title_words = [fold(word) for word in _terms(candidate["title"])]
         if title_words and all(word in query_words for word in title_words):
             points += 2                                 # 'Napoleon' beats 'Napoleon III' for 'when was Napoleon born'
+        if title_in_question(candidate["title"], query):
+            points += 3                                 # 'Romeo and Juliet' beats the film 'Romeo + Juliet' (search rank 1)
         if best_points is None or points > best_points:
             best, best_points = candidate, points
     return best
@@ -295,8 +312,9 @@ def explain_candidates(candidates, query, entities):
             continue
         words = set(re.findall(r"[^\W\d_]+", fold(names + " " + candidate["intro"][:1500])))
         matched = len(query_stems & {_stem(word) for word in words})
+        exact = " · the title is in the question" if title_in_question(candidate["title"], query) else ""
         explained.append({"title": candidate["title"], "kept": True,
-                          "why": f"{matched} of the question's words · search rank {position + 1}"})
+                          "why": f"{matched} of the question's words · search rank {position + 1}{exact}"})
     return explained
 
 
