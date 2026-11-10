@@ -27,6 +27,37 @@ def find_expression(user_text):
     return None if tools.calc(candidate).startswith("error") else candidate
 
 
+# math written in words: "sum of 3 and 6", "7 times 8", "diferența dintre 10 și 4" -> "3 + 6", "7 * 8", "10 - 4"
+# (without this the model decided alone and once wrote "calc: 3 ** 6" for "sum of 3 and 6")
+_N = r"(-?\d+(?:[.,]\d+)?)"
+WORD_MATH = [(re.compile(pattern.replace("N", _N)), operator) for pattern, operator in [
+    (r"(?<![a-z])(?:sum|total|suma|adunarea)\s+(?:of\s+|lui\s+|dintre\s+)?N\s+(?:and|si|cu|plus)\s+N", "+"),
+    (r"(?<![a-z])(?:add|aduna)\s+N\s+(?:and|to|si|cu|la)\s+N", "+"),
+    (r"N\s+plus\s+N", "+"),
+    (r"(?<![a-z])(?:difference|diferenta)\s+(?:between\s+|of\s+|dintre\s+|lui\s+)?N\s+(?:and|si)\s+N", "-"),
+    (r"(?<![a-z])(?:subtract)\s+N\s+from\s+N", "from"),
+    (r"N\s+minus\s+N", "-"),
+    (r"(?<![a-z])(?:product|produsul)\s+(?:of\s+|lui\s+|dintre\s+)?N\s+(?:and|si|cu)\s+N", "*"),
+    (r"(?<![a-z])(?:multiply|inmulteste)\s+N\s+(?:and|by|with|cu|si)\s+N", "*"),
+    (r"N\s+(?:times|multiplied by|ori|inmultit cu)\s+N", "*"),
+    (r"(?<![a-z])(?:divide|imparte)\s+N\s+(?:by|la)\s+N", "/"),
+    (r"N\s+(?:divided by|impartit la|over)\s+N", "/"),
+    (r"N\s+(?:to the power of|to the power|la puterea)\s+N", "**"),
+]]
+
+
+def word_expression(low_plain):
+    """'what is the sum of 2 and 6' -> '2 + 6';  None if no math in words.  low_plain: lower case, no diacritics."""
+    for pattern, operator in WORD_MATH:
+        found = pattern.search(low_plain)
+        if found:
+            a, b = (number.replace(",", ".") for number in found.groups())
+            candidate = f"{b} - {a}" if operator == "from" else f"{a} {operator} {b}"
+            if not tools.calc(candidate).startswith("error"):
+                return candidate
+    return None
+
+
 def check_memory_call(call, user_text):
     """-> the call (maybe corrected), or None if it must not run"""
     name, _, argument = call.partition(":")
@@ -97,7 +128,7 @@ def route(user_text):
         if not tools.calc(call).startswith("error"):
             return ["calc: " + call]
 
-    expression = find_expression(text)
+    expression = find_expression(text) or word_expression(low_plain)
     if expression:
         return ["calc: " + expression]
 

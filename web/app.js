@@ -1301,7 +1301,15 @@ function makeToolStatus(step, running) {
   return box;
 }
 
+function stopToolStatus(box) {
+  box.classList.remove("running");
+  box.classList.add("done", "failed");
+  box.querySelector(".ts-label").textContent = box._labels[0].replace(/…$/, "") + " · stopped";
+  box.querySelector(".ts-detail").textContent = "You stopped it before the tool answered.";
+}
+
 function finishToolStatus(box, step) {
+  if (box.classList.contains("failed") && !box.classList.contains("running") && box.querySelector(".ts-label").textContent.endsWith("stopped")) return;
   box.classList.remove("running");
   box.classList.add("done");
   const label = box.querySelector(".ts-label");
@@ -1708,6 +1716,9 @@ async function send(prompt) {
   }
 
   for (const heldStep of held) show(heldStep);   // stopped in the middle of a "<": show it
+  if (controller.signal.aborted) {               // Stop pressed while a tool was still working: end its animation
+    for (const box of Object.values(toolBoxes)) if (box.classList.contains("running")) stopToolStatus(box);
+  }
 
   // the server may be done while letters still wait (paused): keep drawing until the queue is empty
   stepOnce = () => renderFrame(1);

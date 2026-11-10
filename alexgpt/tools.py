@@ -143,6 +143,7 @@ def convert(value, from_unit, to_unit):
 
 _WIKI_PAGES = {}        # search -> (title, article text): the same question twice asks Wikipedia once
 LAST_WIKI = {}          # details of the last good wiki() result, for the app: title, url, a longer text ("long")
+WIKI_DEADLINE = 15      # seconds: a wiki() call that takes longer says "Wikipedia is busy" instead of waiting
 LAST_SEARCH = {}        # how the last wiki() decided, for the Explore page: every search result with kept/why, the scored sentences
                         # (only written, never read here: wiki()'s result is the same with or without it)
 
@@ -344,16 +345,27 @@ def wiki(query, language="en", max_chars=MAX_RESULT_CHARS):
     if not query:
         return "error: nothing found for ''"
 
+    started = time.time()
+
     def get(parameters):
+        """One request.  Busy (429): 2 more tries after 1.5 s and 3 s.  The whole search gives up after WIKI_DEADLINE
+        seconds (the chat said "Searching Wikipedia" for a minute before; now it answers "busy" quickly)."""
         url = f"https://{language}.wikipedia.org/w/api.php?" + urllib.parse.urlencode({**parameters, "format": "json"})
-        waits = [2, 5, 10]                              # too many requests (429): wait longer each time, 3 more tries
+        waits = [1.5, 3]
         for attempt in range(len(waits) + 1):
+            left = WIKI_DEADLINE - (time.time() - started)
+            if left <= 1:
+                raise urllib.error.HTTPError(url, 429, "too slow", None, None)      # -> "Wikipedia is busy"
             try:
-                return json.load(urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=15))
+                return json.load(urllib.request.urlopen(urllib.request.Request(url, headers=headers), timeout=min(8, left)))
             except urllib.error.HTTPError as error:
                 if error.code != 429 or attempt == len(waits):
                     raise
-                time.sleep(min(float(error.headers.get("Retry-After") or waits[attempt]), 10))
+                time.sleep(min(waits[attempt], max(0, WIKI_DEADLINE - (time.time() - started) - 1)))
+            except (TimeoutError, urllib.error.URLError) as error:
+                if isinstance(error, TimeoutError) or isinstance(getattr(error, "reason", None), TimeoutError):
+                    raise urllib.error.HTTPError(url, 429, "too slow", None, None)   # slow = busy, not "no internet"
+                raise
 
     entities = key_entities(query)
     LAST_SEARCH.clear()

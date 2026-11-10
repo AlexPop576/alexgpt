@@ -620,8 +620,11 @@ class SingularityChat(SupernovaChat):
         # wrong article ("what songs does Alesso have" -> "Becky Hill").  The title is kept only when the user
         # named nothing ("tell me about the danube" -> "Danube").
         entity = tool_router.main_entity(self.rewritten_prompt or prompt)
+        entity = re.sub(r"['’]s$", "", entity or "")       # "Martin Garrix's songs" -> "Martin Garrix"
         if entity:
-            self.topic = entity
+            title = (self.wiki_details or {}).get("title") or ""
+            # "who is martin Garrix?" -> "Garrix", but the article is "Martin Garrix": the full name is the better topic
+            self.topic = title if title and entity.lower() in title.lower() and len(title) <= 60 else entity
 
     def log_history_gate(self, prompt, reason):
         """one line per message in runs/history_gate.jsonl: did the model see the history, and why"""
@@ -708,7 +711,11 @@ class SingularityChat(SupernovaChat):
             self.tool_messages = extra or None
             self.abstain_if_no_evidence([follow_up], previous or text, tool_router)
             return
-        routed = tool_router.route(text)
+        # "what are his most famous songs?" after Martin Garrix: the rules must see the name, not "his"
+        with_name = tool_router.with_topic(text, self.topic) if self.topic and not tool_router.named_entities(text) else text
+        routed = tool_router.route(with_name)
+        if routed and with_name != text:
+            self.rewritten_prompt = with_name           # the model reads "What are Martin Garrix's most famous songs?"
         self.note_gate("rules", routed, " + ".join(routed) if routed else "no fixed rule matches (math, units, time, weather, dice, memory…)")
         if routed:                                    # a clear request ("2+6", "tell me about X", "roll 3 dice"): a plain rule,
             for call in routed:                         # the model only writes the answer
