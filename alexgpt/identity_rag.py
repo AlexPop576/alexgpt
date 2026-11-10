@@ -100,8 +100,8 @@ class IdentityIndex:
         length = math.sqrt(sum(w * w for w in weights.values())) or 1.0
         return {f: w / length for f, w in weights.items()}
 
-    def match(self, text):
-        """-> (group, score 0..1, the most similar question).
+    def ranked(self, text):
+        """-> every group as (group, score 0..1, its most similar question), best first.
         score of a group = 0.5 * its closest question + 0.5 * its centre"""
         query = self.vector(features(text))
 
@@ -112,12 +112,16 @@ class IdentityIndex:
             score = cosine(vector)
             if score > closest.get(group, (-1.0, None))[0]:
                 closest[group] = (score, question)
-        best = (None, 0.0, None)
-        for group, (score, question) in closest.items():
-            combined = 0.5 * score + 0.5 * cosine(self.centres[group])
-            if combined > best[1]:
-                best = (group, combined, question)
-        return best
+        scored = [(group, 0.5 * score + 0.5 * cosine(self.centres[group]), question) for group, (score, question) in closest.items()]
+        return sorted(scored, key=lambda item: -item[1])
+
+    def match(self, text):
+        """-> (group, score 0..1, the most similar question), or (None, 0.0, None) if nothing is similar at all"""
+        for best in self.ranked(text):
+            if best[1] > 0.0:
+                return best
+            break
+        return (None, 0.0, None)
 
     def accepts(self, text, group, score):
         """similar enough, and about you/me (unless the group does not need it)"""

@@ -293,7 +293,8 @@ class FlowInspector:
                 "mlp_push": [pieces[int(token_id)] for token_id in push_ids[2 * index + 1]],
             })
         return {"tokens": [pieces[token_id] for token_id in list(context_ids)[-shown:]],
-                "start": guesses(0), "blocks": blocks}
+                "start": guesses(0), "blocks": blocks,
+                "embedding": [round(float(value), 3) for value in self.data[("in", 0)][:8]]}   # 8 of the newest token's numbers
 
 
 class GalaxyChat:
@@ -560,6 +561,13 @@ class SingularityChat(SupernovaChat):
         self.history_turns = 2             # a 126M model gets confused by longer chats: it sees only the last exchange
         self.search_id = self.tokenizer.special_ids["<|search|>"]
         self.block_ids = [self.search_id, self.tokenizer.special_ids["<|context|>"]]    # the answer itself never starts a tool call
+        self.tracer = None                 # a list while the Explore page runs (alexgpt/explore.py): every router check goes in it
+
+    def note_gate(self, gate, hit, detail=""):
+        """Explore only: notes one router check ("followup", "rules", "identity", "question", "search").
+        In the normal chat self.tracer is None and this does nothing."""
+        if self.tracer is not None:
+            self.tracer.append({"gate": gate, "hit": bool(hit), "detail": detail})
 
     def messages_ids(self, user_text, history, extra):
         from alexgpt import tools
@@ -670,6 +678,12 @@ class SingularityChat(SupernovaChat):
         last_call = getattr(self, "last_call", None)
         follow_up = tool_router.route_followup(text, last_call)
         the_one = tool_router.the_one_in(text, previous)
+        if the_one:
+            self.note_gate("followup", True, "“the one in …”: the earlier question with the new place")
+        elif follow_up:
+            self.note_gate("followup", True, f"repeats the last tool ({last_call}) → {follow_up}")
+        else:
+            self.note_gate("followup", False, "not a follow-up of an earlier tool call" if last_call else "there is no earlier tool call to repeat")
         if the_one:                                     # "what is the Wesselenyi castle?" + "the one in Jibou"
             self.rewritten_prompt = the_one             # -> "what is the Wesselenyi castle in Jibou"
             call = tool_router.wiki_call(the_one)
@@ -695,7 +709,8 @@ class SingularityChat(SupernovaChat):
             self.abstain_if_no_evidence([follow_up], previous or text, tool_router)
             return
         routed = tool_router.route(text)
-        if routed:                                      # a clear request ("2+6", "tell me about X", "roll 3 dice"): a plain rule,
+        self.note_gate("rules", routed, " + ".join(routed) if routed else "no fixed rule matches (math, units, time, weather, dice, memory…)")
+        if routed:                                    # a clear request ("2+6", "tell me about X", "roll 3 dice"): a plain rule,
             for call in routed:                         # the model only writes the answer
                 yield from run(call)
             self.tool_messages = extra or None
@@ -707,12 +722,17 @@ class SingularityChat(SupernovaChat):
             remembered = tools.memory_get("")
             knows_user = not remembered.startswith("error") and remembered != "nothing remembered"
             if answer and not (group.startswith("unknown-you") and knows_user):   # memory may know the answer
+                self.note_gate("identity", True, f"close to the questions of “{group}” in identity_qa.txt")
                 self.identity_reply = answer
                 self.tool_messages = None
                 return
+            self.note_gate("identity", False, "not a question about the model")
+        else:
+            self.note_gate("identity", False, "skipped: a follow-up keeps the chat history")
         if not self.topic and tool_router.PRONOUNS.search(text) and not tool_router.named_entities(text):
             if tool_router.route_question(text, previous)[0]:
                 # "what songs does he have?" as the first message: nobody to search for -> ask, don't search
+                self.note_gate("question", True, "a question about “he / she / it”, but nobody was named → ask who")
                 self.abstain = tool_router.who_do_you_mean(text)
                 self.tool_messages = None
                 return
@@ -720,16 +740,19 @@ class SingularityChat(SupernovaChat):
         call, explicit = tool_router.route_question(question, previous)
         if call and self.use_history and self.topic and not tool_router.named_entities(question):
             call += " " + self.topic                    # "but how old?" after Alesso -> search "but how old Alesso"
-        if call:                                        # a question that needs facts, or "search ...": Wikipedia first
+        self.note_gate("question", call, call if call else "not a who / what / when question")
+        if call:                                      # a question that needs facts, or "search ...": Wikipedia first
             if question != text:
                 self.rewritten_prompt = question        # "what songs does he have" -> "what songs does Alesso have"
             yield from run(call, must_be_relevant=not explicit)
             self.tool_messages = extra or None
             self.abstain_if_no_evidence([call], text, tool_router)
             return
-        for _ in range(3):
+        for attempt in range(3):
             ids = self.messages_ids(text, [], extra)
             if self.greedy(ids) != self.search_id:
+                if attempt == 0:
+                    self.note_gate("search", False, "the model's first token is not <|search|>: it answers on its own")
                 break
             ids = ids + [self.search_id]
             call_ids = []
@@ -740,6 +763,7 @@ class SingularityChat(SupernovaChat):
                 ids.append(next_id)
                 call_ids.append(next_id)
             call = tool_router.check_memory_call(self.tokenizer.decode(call_ids).strip(), text)
+            self.note_gate("search", call is not None, f"the model wrote <|search|>{call}" if call else "the model wrote a wrong tool call: dropped")
             if call is None:
                 break                                   # a wrong tool call: answer without it
             count_before = len(extra)
@@ -1037,11 +1061,16 @@ def generate_core(model, prompt, max_chars, temperature, rng, history=None, visu
             probs[model.block_ids] = 0.0
             probs = probs / probs.sum()
         if guard_ids is not None and len(guard_ids):
+            before_guard = probs
             guarded = probs.copy()
             guarded[guard_ids] = 0.0                     # a name or number the tool did not give: not allowed
             if guarded.sum() > 0.05:
                 probs = guarded / guarded.sum()
             probs = finish_known_word(model, probs, generated_text, guard_words)
+            if getattr(model, "last_inside", None) is not None:      # the Visualisation / Explore: show what was banned
+                top_before = np.argsort(before_guard)[::-1][:8]
+                model.last_inside["before_guard"] = [[model.chars[i], round(float(before_guard[i]), 4)] for i in top_before]
+                model.last_inside["banned"] = [model.chars[i] for i in top_before if probs[i] == 0.0 and before_guard[i] > 0.002]
 
         # temperature: < 1 makes the model more confident, > 1 more random
         adjusted = probs ** (1.0 / temperature)
@@ -1120,6 +1149,7 @@ def generate_core(model, prompt, max_chars, temperature, rng, history=None, visu
                 output.append([model.chars[candidate], round(float(model.last_logits[candidate]), 2),
                                round(float(probs[candidate]), 4), round(float(adjusted[candidate]), 4)])
             inside["output"] = output
+            inside["model_top"] = [[model.chars[c], round(float(probs[c]), 4)] for c in np.argsort(probs)[::-1][:8]]   # before temperature / top-p
             inside["picked"] = [model.chars[next_id], round(float(model.last_logits[next_id]), 2),
                                 round(float(probs[next_id]), 4), round(float(adjusted[next_id]), 4)]
             inside["temperature"] = temperature

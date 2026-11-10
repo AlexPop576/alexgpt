@@ -16,6 +16,7 @@ from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
 import numpy as np
 
 from alexgpt.chat import load_models, generate_stream, split_into_tokens
+from alexgpt.explore import explore
 from alexgpt.training_view import read_log, DataPeek
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -68,6 +69,10 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(model_list)
             return
 
+        if url.path.startswith("/explore/"):            # Explore mode: every file in web/explore/
+            self.send_explore_file(url.path[len("/explore/"):])
+            return
+
         if self.path in STATIC_FILES:
             file_name, content_type = STATIC_FILES[self.path]
             with open(os.path.join(WEB_DIR, file_name), "rb") as f:
@@ -90,6 +95,24 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json({"error": "unknown model"}, status=400)
                 return
             self.send_json({"tokens": split_into_tokens(MODELS[request["model"]][0], request.get("text", ""))})
+            return
+        if self.path == "/api/explore":                   # Explore 3D: one message through Singularity, every step recorded
+            length = int(self.headers.get("Content-Length", 0))
+            request = json.loads(self.rfile.read(length))
+            if "Singularity" not in MODELS:
+                self.send_json({"error": "Singularity is not loaded"}, status=503)
+                return
+            prompt = str(request.get("prompt", "")).strip()[:400]
+            if not prompt:
+                self.send_json({"error": "empty message"}, status=400)
+                return
+            history = [turn for turn in (request.get("history") or [])[-2:] if isinstance(turn, dict)]
+            temperature = min(1.5, max(0.05, float(request.get("temperature", 0.7))))
+            try:
+                self.send_json(explore(MODELS["Singularity"][0], prompt, history, temperature, rng))
+            except Exception as error:
+                traceback.print_exc()
+                self.send_json({"error": f"{type(error).__name__}: {error}"}, status=500)
             return
         if self.path != "/api/generate":
             self.send_error(404)
@@ -133,6 +156,24 @@ class Handler(BaseHTTPRequestHandler):
                 self.write_event({"type": "error", "message": f"{type(error).__name__}: {error}"})
             except OSError:
                 pass
+
+    def send_explore_file(self, name):
+        """Only plain file names from web/explore/ with a known type (no folders, so no '../' tricks)."""
+        types = {".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8",
+                 ".css": "text/css; charset=utf-8", ".json": "application/json"}
+        extension = os.path.splitext(name)[1]
+        path = os.path.join(WEB_DIR, "explore", name)
+        if not name or "/" in name or "\\" in name or name.startswith(".") or extension not in types or not os.path.isfile(path):
+            self.send_error(404)
+            return
+        with open(path, "rb") as f:
+            content = f.read()
+        self.send_response(200)
+        self.send_header("Content-Type", types[extension])
+        self.send_header("Content-Length", str(len(content)))
+        self.send_header("Cache-Control", "no-cache")
+        self.end_headers()
+        self.wfile.write(content)
 
     def write_event(self, data):
         self.wfile.write(("data: " + json.dumps(data) + "\n\n").encode("utf-8"))

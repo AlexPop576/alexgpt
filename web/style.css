@@ -102,6 +102,10 @@ button { font: inherit; color: inherit; }
   transition: color 0.15s, background 0.15s;
 }
 .icon-button:hover, .icon-button.active { color: var(--text); background: var(--surface-2); }
+/* "Explore 3D": only for Singularity, a link to the 3D walk through the model */
+.explore-link { text-decoration: none; color: var(--accent); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent); }
+.explore-link:hover { color: var(--text); background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.explore-link[hidden] { display: none; }
 [data-theme="dark"] .icon-sun, [data-theme="light"] .icon-moon { display: none; }
 
 .main { flex: 1; display: flex; min-height: 0; }

@@ -143,6 +143,8 @@ def convert(value, from_unit, to_unit):
 
 _WIKI_PAGES = {}        # search -> (title, article text): the same question twice asks Wikipedia once
 LAST_WIKI = {}          # details of the last good wiki() result, for the app: title, url, a longer text ("long")
+LAST_SEARCH = {}        # how the last wiki() decided, for the Explore page: every search result with kept/why, the scored sentences
+                        # (only written, never read here: wiki()'s result is the same with or without it)
 
 STOP_WORDS = set("""a an the and or but of to in on at by for with from into about as is are was were be been being it its this that these those
 there here what which who whom whose when where why how much many long far old does do did done can could should would will shall may might
@@ -278,6 +280,26 @@ def _choose_article(candidates, query, entities):
     return best
 
 
+def explain_candidates(candidates, query, entities):
+    """The same test as _choose_article, written out for every search result (for the Explore page):
+    -> [{"title", "kept", "why"}].  Does not change which article wins."""
+    query_stems = {_stem(fold(word)) for word in _terms(query)}
+    explained = []
+    for position, candidate in enumerate(candidates):
+        names = candidate["title"] + " | " + " | ".join(candidate["aliases"][:60])
+        if entities and not names_together(entities, names, candidate["intro"]):
+            name_words = set(re.findall(r"[^\W\d_]+", fold(names + " " + candidate["intro"])))
+            missing = [entity for entity in entities if not entity_in(entity, name_words, names + " " + candidate["intro"])]
+            explained.append({"title": candidate["title"], "kept": False,
+                              "why": "no “" + "”, “".join(missing or entities) + "” in it"})
+            continue
+        words = set(re.findall(r"[^\W\d_]+", fold(names + " " + candidate["intro"][:1500])))
+        matched = len(query_stems & {_stem(word) for word in words})
+        explained.append({"title": candidate["title"], "kept": True,
+                          "why": f"{matched} of the question's words · search rank {position + 1}"})
+    return explained
+
+
 def _full_text(get, language, title):
     """the whole article as plain text (cached): one request"""
     key = f"page|{language}|{title}"
@@ -316,10 +338,13 @@ def wiki(query, language="en", max_chars=MAX_RESULT_CHARS):
                 time.sleep(min(float(error.headers.get("Retry-After") or waits[attempt]), 10))
 
     entities = key_entities(query)
+    LAST_SEARCH.clear()
+    LAST_SEARCH.update({"query": query, "language": language, "names": entities, "results": [], "sentences": [], "chosen": None})
     try:
         candidates = _search_candidates(get, language, query)
         if not candidates:
             return f"error: nothing found for '{query}'"
+        LAST_SEARCH["results"] = explain_candidates(candidates, query, entities)
         chosen = _choose_article(candidates, query, entities)
         if chosen is None and entities:
             # no intro names everything: maybe the best article says it further down (one more request)
@@ -429,6 +454,8 @@ def wiki(query, language="en", max_chars=MAX_RESULT_CHARS):
     relevant = len(question) < len(set(_terms(query))) or best_points > 0     # the title or a sentence matches the search
     if entities:
         relevant = True                                 # every name of the question is in this article (checked above)
+    LAST_SEARCH.update({"chosen": title, "relevant": relevant, "passage": passage[:max(room, 0)],
+                        "sentences": [[sentence[:260], points] for points, _, sentence in sorted(ranked, key=lambda item: (-item[0], item[1]))[:5]]})
     LAST_WIKI.update({"title": title, "url": url, "long": long_text[:2200], "language": language, "relevant": relevant,
                       "aliases": aliases[:20]})
     return f"{title} — {passage[:max(room, 0)]} ({url})"

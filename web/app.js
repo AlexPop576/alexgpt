@@ -232,6 +232,7 @@ function selectModel(name) {
   document.documentElement.style.setProperty("--accent", modelColor(name));
   document.documentElement.dataset.model = name;
   document.documentElement.dataset.chat = isChatModel(name) ? "1" : "0";
+  $("exploreLink").hidden = name !== "Singularity";        // the 3D Explore page is made only for Singularity
   $("length").dispatchEvent(new Event("input"));            // the Length label means something else for chat models          // lets the CSS give every model its own animations
   setCosmosModel(name);
 
