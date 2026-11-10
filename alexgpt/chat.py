@@ -1229,6 +1229,10 @@ def fact_guard_ids(model, prompt, tool_messages):
     source = source + "\n" + " ".join(source.split())            # every word also with a space before it
     allowed = set(model.tokenizer.encode(source, allow_special=False))
     allowed |= set(model.tokenizer.encode(" " + ALWAYS_ALLOWED.replace(" ", "\n "), allow_special=False))
+    # every word also WITHOUT a space before it, the way the answer's first word is written ("A telephone ...").
+    # Before, that form was allowed only for the first word of a line, so "A" was banned and the model had to
+    # start with "T" ("Telephone was invented by Captain John Taylor", found with the Explore page).
+    allowed |= set(model.tokenizer.encode("\n".join(dict.fromkeys(source.split())), allow_special=False))
     return np.array([token_id for token_id in model._name_like_ids if token_id not in allowed], dtype=np.int64)
 
 
