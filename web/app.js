@@ -228,6 +228,7 @@ function selectModel(name) {
     emptyIcon.innerHTML = "";
     emptyIcon.append(makeIcon(name, 46));
   }
+  renderGreeting();
 
   document.documentElement.style.setProperty("--accent", modelColor(name));
   document.documentElement.dataset.model = name;
@@ -1485,6 +1486,7 @@ async function send(prompt) {
   if (!state.current) return;
   if (!$("intro").hidden) $("intro").querySelector(".intro-ok").click();   // writing a message = "got it"
   const chat = ensureChat(prompt);
+  const isFirstMessage = chat.messages.length === 0;     // after the reply, Singularity names the chat
   const history = [];                              // what was said before in this chat (chat models read it)
   for (const turn of chat.messages) history.push({ role: turn.role, text: turn.text });
   chat.messages.push({ role: "user", text: prompt });
@@ -1754,7 +1756,62 @@ async function send(prompt) {
   bot.message.classList.add("done");             // off-screen finished replies are skipped when drawing
   state.controller = null;
   setGenerating(false);
+  if (isFirstMessage) nameChat(chat, prompt);
 }
+
+// ---------------------------------------------------------------- chat names and the welcome line
+// A new chat is first called by its message; after the first reply Singularity writes a short name for it
+// (server.py /api/title -> alexgpt/chat_title.py: the model tries, code checks it, plain rules if it is not usable).
+async function nameChat(chat, firstMessage) {
+  const placeholder = chat.title;
+  try {
+    const response = await fetch("/api/title", {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: firstMessage }),
+    });
+    const data = await response.json();
+    if (data.title && chat.title === placeholder) {         // the user did not rename it meanwhile
+      chat.title = data.title;
+      saveChats();
+      renderChatList();
+    }
+  } catch (e) { /* no server: the message stays the name */ }
+}
+
+// The welcome line: "Hi, I'm <model>." the first time; later a short greeting, with the user's name when
+// Singularity remembers it ("remember my name is Alex" -> memory.json). One pick per page load.
+let userName = null;
+const greetingPick = Math.random();
+const visits = (() => {
+  const count = Number(loadPreference("alexgpt-visits") || 0) + 1;
+  savePreference("alexgpt-visits", String(count));
+  return count;
+})();
+function greetingLine() {
+  const model = state.current || "CosmosLM";
+  if (visits <= 1) return "Hi, I'm " + model + ".";
+  const hour = new Date().getHours();
+  const part = hour >= 5 && hour < 12 ? "morning" : hour >= 12 && hour < 18 ? "afternoon" : "evening";
+  const name = userName ? ", " + userName : "";
+  const lines = [
+    "Hi, I'm " + model + ".",
+    "Welcome back" + name + ".",
+    "Good " + part + name + ".",
+    userName ? "Glad to see you, " + userName + "." : "Glad to see you again.",
+    "Look who's back" + name + ".",
+  ];
+  return lines[Math.floor(greetingPick * lines.length)];
+}
+function renderGreeting() {
+  const title = $("emptyTitle");
+  const subtitle = $("emptySubtitle");
+  if (!title || !state.current) return;
+  title.textContent = greetingLine();
+  const continues = !isChatModel(state.current) || familyEntry(state.current).continues;
+  subtitle.textContent = continues ? "Built from scratch. Start a sentence and I'll finish it." : "Built from scratch. What's on your mind?";
+}
+fetch("/api/profile").then((response) => response.json()).then((data) => {
+  if (data && data.name) { userName = String(data.name).slice(0, 30); renderGreeting(); }
+}).catch(() => {});
 
 // ---------------------------------------------------------------- wiring
 
@@ -2495,6 +2552,7 @@ function openChat(id) {
   if (!chat) {
     box.innerHTML = EMPTY_STATE_HTML;
     if (state.current) $("emptyIcon").append(makeIcon(state.current, 46));
+    renderGreeting();
   } else {
     for (const turn of chat.messages) {
       if (turn.role === "user") addUserMessage(turn.text);

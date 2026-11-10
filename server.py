@@ -17,6 +17,8 @@ import numpy as np
 
 from alexgpt.chat import load_models, generate_stream, split_into_tokens
 from alexgpt.explore import explore
+from alexgpt.chat_title import chat_title
+from alexgpt.tools import _load_memory as tools_memory
 from alexgpt.training_view import read_log, DataPeek
 
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -52,6 +54,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_json(data_peek.peek(parse_qs(url.query).get("source", [None])[0]))
             except Exception as error:
                 self.send_json({"error": f"{type(error).__name__}: {error}"})
+            return
+
+        if self.path == "/api/profile":                   # the user's name, if they told Singularity ("remember my name is Alex")
+            memory = tools_memory()
+            self.send_json({"name": memory.get("name") or memory.get("nume")})
             return
 
         if self.path == "/api/models":
@@ -96,7 +103,14 @@ class Handler(BaseHTTPRequestHandler):
                 return
             self.send_json({"tokens": split_into_tokens(MODELS[request["model"]][0], request.get("text", ""))})
             return
-        if self.path == "/api/explore":                   # Explore 3D: one message through Singularity, every step recorded
+        if self.path == "/api/title":                     # a name for a new chat, written by Singularity (checked by code)
+            length = int(self.headers.get("Content-Length", 0))
+            request = json.loads(self.rfile.read(length))
+            model = MODELS["Singularity"][0] if "Singularity" in MODELS else None
+            title, source = chat_title(model, request.get("text", ""))
+            self.send_json({"title": title, "source": source})
+            return
+        if self.path == "/api/explore":                 # Explore 3D: one message through Singularity, every step recorded
             length = int(self.headers.get("Content-Length", 0))
             request = json.loads(self.rfile.read(length))
             if "Singularity" not in MODELS:
