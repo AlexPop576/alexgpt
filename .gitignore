@@ -5,3 +5,15 @@ __pycache__/
 .ipynb_checkpoints/
 runs/
 jobs/
+
+# local files that are not part of the project
+*.bak
+*.bak_v*
+*.tmp
+*.zip
+*.pt
+*_log.txt
+.claude/
+CLAUDE.md
+memory.json
+sft_data/my_conversations*.txt

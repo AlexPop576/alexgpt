@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Singularity</title>
+<style>
+  :root { --bg:#f6f7f9; --panel:#ffffff; --text:#1d2129; --muted:#6b7280; --line:#e3e6ea; --accent:#0f9fa8; --user:#e3f5f6; --code:#f0f2f5; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#111418; --panel:#1a1e24; --text:#e6e8eb; --muted:#9097a1; --line:#2a3038; --accent:#3cc6cf; --user:#163338; --code:#232830; } }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.55 system-ui, -apple-system, "Segoe UI", sans-serif; height:100vh; display:flex; flex-direction:column; }
+  header { display:flex; align-items:center; gap:12px; padding:10px 16px; border-bottom:1px solid var(--line); background:var(--panel); }
+  header h1 { font-size:17px; margin:0; font-weight:650; }
+  header .dot { width:10px; height:10px; border-radius:50%; background:var(--accent); }
+  header .spacer { flex:1; }
+  header button, .memory button { background:none; border:1px solid var(--line); color:var(--text); border-radius:8px; padding:5px 10px; cursor:pointer; font:inherit; font-size:14px; }
+  header button:hover { border-color:var(--accent); }
+  .memory { font-size:13px; color:var(--muted); padding:6px 16px; border-bottom:1px solid var(--line); display:flex; gap:10px; align-items:center; }
+  .memory button { font-size:12px; padding:2px 8px; }
+  main { flex:1; overflow-y:auto; padding:20px 16px; }
+  .chat { max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:14px; }
+  .message { padding:10px 14px; border-radius:12px; max-width:92%; overflow-wrap:anywhere; }
+  .user { align-self:flex-end; background:var(--user); white-space:pre-wrap; }
+  .assistant { align-self:flex-start; background:var(--panel); border:1px solid var(--line); }
+  .assistant p { margin:0 0 8px; } .assistant p:last-child { margin-bottom:0; }
+  .assistant pre { background:var(--code); padding:10px; border-radius:8px; overflow-x:auto; font-size:14px; margin:8px 0; }
+  .assistant code { background:var(--code); padding:1px 5px; border-radius:4px; font-size:14px; }
+  .assistant pre code { padding:0; background:none; }
+  .assistant table { border-collapse:collapse; margin:8px 0; font-size:14px; display:block; overflow-x:auto; }
+  .assistant th, .assistant td { border:1px solid var(--line); padding:4px 8px; text-align:left; }
+  .assistant ul, .assistant ol { margin:4px 0 8px; padding-left:22px; }
+  .assistant h2, .assistant h3 { font-size:16px; margin:6px 0; }
+  .tool { align-self:flex-start; font-size:13px; color:var(--muted); border:1px dashed var(--line); border-radius:8px; padding:4px 10px; font-family:ui-monospace, Consolas, monospace; max-width:92%; overflow-wrap:anywhere; }
+  .meta { font-size:12px; color:var(--muted); align-self:flex-start; margin-top:-8px; }
+  .empty { color:var(--muted); text-align:center; margin-top:15vh; }
+  .empty b { color:var(--text); font-size:20px; display:block; margin-bottom:6px; }
+  form { display:flex; gap:8px; max-width:760px; margin:0 auto; width:100%; padding:12px 16px 16px; }
+  textarea { flex:1; resize:none; border:1px solid var(--line); background:var(--panel); color:var(--text); border-radius:12px; padding:10px 12px; font:inherit; min-height:46px; max-height:160px; }
+  textarea:focus { outline:none; border-color:var(--accent); }
+  form button { background:var(--accent); color:#fff; border:none; border-radius:12px; padding:0 18px; font:inherit; font-weight:600; cursor:pointer; }
+  form button:disabled { opacity:.5; cursor:default; }
+</style>
+</head>
+<body>
+<header><span class="dot"></span><h1>Singularity</h1><span class="spacer"></span><button id="new">Conversație nouă</button></header>
+<div class="memory">Memorie: <span id="memory">…</span><button id="clear">Șterge</button></div>
+<main id="scroll"><div class="chat" id="chat"><div class="empty"><b>Singularity</b>model de 126M din familia CosmosLM · română și engleză · calcule, Wikipedia, vreme, oră, memorie</div></div></main>
+<form id="form"><textarea id="input" rows="1" placeholder="Scrie un mesaj…" autofocus></textarea><button id="send">Trimite</button></form>
+<script>
+const chat = document.getElementById("chat"), input = document.getElementById("input"), send = document.getElementById("send");
+let history = [];
+
+function escapeHtml(text) { return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+function inline(text) {
+  return escapeHtml(text)
+    .replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>")
+    .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>");
+}
+function markdown(text) {            // small renderer: code blocks, tables, lists, headings, bold, italic
+  const parts = text.split(/```/);
+  let html = "";
+  parts.forEach((part, index) => {
+    if (index % 2 === 1) { html += "<pre><code>" + escapeHtml(part.replace(/^[a-zA-Z+#]*\n/, "")) + "</code></pre>"; return; }
+    const lines = part.split("\n");
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      if (/^\s*\|.*\|\s*$/.test(line) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|\s*$/.test(lines[i + 1])) {
+        const cells = row => row.trim().replace(/^\||\|$/g, "").split("|").map(cell => inline(cell.trim()));
+        html += "<table><tr>" + cells(line).map(c => "<th>" + c + "</th>").join("") + "</tr>";
+        i += 2;
+        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) { html += "<tr>" + cells(lines[i]).map(c => "<td>" + c + "</td>").join("") + "</tr>"; i++; }
+        html += "</table>"; continue;
+      }
+      if (/^\s*([-*•])\s+/.test(line)) {
+        html += "<ul>"; while (i < lines.length && /^\s*([-*•])\s+/.test(lines[i])) { html += "<li>" + inline(lines[i].replace(/^\s*[-*•]\s+/, "")) + "</li>"; i++; }
+        html += "</ul>"; continue;
+      }
+      if (/^\s*\d+\.\s+/.test(line)) {
+        html += "<ol>"; while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) { html += "<li>" + inline(lines[i].replace(/^\s*\d+\.\s+/, "")) + "</li>"; i++; }
+        html += "</ol>"; continue;
+      }
+      const heading = line.match(/^(#{1,4})\s+(.*)$/);
+      if (heading) { html += "<h3>" + inline(heading[2]) + "</h3>"; i++; continue; }
+      if (line.trim()) html += "<p>" + inline(line) + "</p>";
+      i++;
+    }
+  });
+  return html;
+}
+function add(kind, html) {
+  const empty = chat.querySelector(".empty"); if (empty) empty.remove();
+  const element = document.createElement("div"); element.className = kind; element.innerHTML = html;
+  chat.appendChild(element); scrollDown(); return element;
+}
+function scrollDown() { const box = document.getElementById("scroll"); box.scrollTop = box.scrollHeight; }
+async function refreshMemory() {
+  try { const data = await (await fetch("/memory")).json(); document.getElementById("memory").textContent = data.memory; } catch (e) {}
+}
+
+async function ask(text) {
+  history.push({ role: "user", content: text });
+  add("message user", escapeHtml(text));
+  send.disabled = true;
+  let bubble = null, answer = "";
+  try {
+    const response = await fetch("/chat", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ messages: history }) });
+    const reader = response.body.getReader(), decoder = new TextDecoder();
+    let buffer = "";
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let newline;
+      while ((newline = buffer.indexOf("\n")) >= 0) {
+        const event = JSON.parse(buffer.slice(0, newline)); buffer = buffer.slice(newline + 1);
+        if (event.type === "tool") { add("tool", "🔧 " + escapeHtml(event.call) + " → " + escapeHtml(event.result.slice(0, 160))); bubble = null; }
+        else if (event.type === "token") { if (!bubble) bubble = add("message assistant", ""); answer += event.text; bubble.innerHTML = markdown(answer); scrollDown(); }
+        else if (event.type === "done") { add("meta", event.speed + " tokeni/s"); }
+      }
+    }
+  } catch (error) { add("tool", "eroare: serverul nu răspunde"); }
+  history.push({ role: "assistant", content: answer });
+  send.disabled = false; input.focus(); refreshMemory();
+}
+
+document.getElementById("form").addEventListener("submit", event => {
+  event.preventDefault();
+  const text = input.value.trim(); if (!text || send.disabled) return;
+  input.value = ""; input.style.height = ""; ask(text);
+});
+input.addEventListener("keydown", event => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); document.getElementById("form").requestSubmit(); } });
+input.addEventListener("input", () => { input.style.height = ""; input.style.height = Math.min(input.scrollHeight, 160) + "px"; });
+document.getElementById("new").addEventListener("click", () => { history = []; chat.innerHTML = ""; input.focus(); });
+document.getElementById("clear").addEventListener("click", async () => { await fetch("/memory/clear", { method: "POST" }); refreshMemory(); });
+refreshMemory();
+</script>
+</body>
+</html>

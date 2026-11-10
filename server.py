@@ -150,8 +150,15 @@ class Handler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    server = ThreadingHTTPServer(("localhost", PORT), Handler)
-    print(f"\nAlexGPT is running at http://localhost:{PORT}  (Ctrl+C to stop)\n")
+    import sys
+    # python server.py --network : also reachable from your other devices (e.g. the laptop through Tailscale)
+    host = "0.0.0.0" if "--network" in sys.argv else "localhost"
+    server = ThreadingHTTPServer((host, PORT), Handler)
+    print(f"\nAlexGPT is running at http://localhost:{PORT}  (Ctrl+C to stop)")
+    if host != "localhost":
+        import socket
+        print(f"from your other devices: http://{socket.gethostname()}:{PORT}  (same Tailscale network)")
+    print()
     try:
         server.serve_forever()
     except KeyboardInterrupt:

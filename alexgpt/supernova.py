@@ -59,7 +59,7 @@ class Attention(nn.Module):
         self.q_norm = RMSNorm(self.head_size)
         self.k_norm = RMSNorm(self.head_size)
 
-    def forward(self, x, cos, sin):
+    def forward(self, x, cos, sin, allowed=None):
         batch, length, size = x.shape
         q, k, v = self.qkv(x).split(size, dim=2)
         # (batch, length, size) -> (batch, heads, length, head_size): every head gets its own slice, like your loop
@@ -69,7 +69,10 @@ class Attention(nn.Module):
         q, k = self.q_norm(q), self.k_norm(k)
         q, k = apply_rope(q, cos[:length], sin[:length]), apply_rope(k, cos[:length], sin[:length])
         # softmax(q @ k.T / sqrt(head_size) with the future hidden) @ v, for all heads at once
-        out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        if allowed is None:
+            out = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        else:                                          # SFT: several conversations in one row, each sees only itself
+            out = F.scaled_dot_product_attention(q, k, v, attn_mask=allowed)
         out = out.transpose(1, 2).contiguous().view(batch, length, size)
         return self.out(out)
 
@@ -98,8 +101,8 @@ class Block(nn.Module):
         self.norm2 = RMSNorm(size)
         self.mlp = SwiGLU(size)
 
-    def forward(self, x, cos, sin):
-        x = x + self.attention(self.norm1(x), cos, sin)     # residual, like Galaxy
+    def forward(self, x, cos, sin, allowed=None):
+        x = x + self.attention(self.norm1(x), cos, sin, allowed)     # residual, like Galaxy
         x = x + self.mlp(self.norm2(x))
         return x
 
@@ -130,10 +133,19 @@ class Supernova(nn.Module):
         if isinstance(module, (nn.Linear, nn.Embedding)):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
 
-    def forward(self, ids, targets=None):
+    def forward(self, ids, targets=None, segments=None):
+        """segments (optional, SFT): the number of the conversation every token belongs to, e.g.
+        [0 0 0 0 1 1 1 2 2]. A token may look only at earlier tokens of ITS conversation (block-diagonal mask);
+        without it, the 2nd conversation in a packed row could copy names and facts from the 1st one."""
         x = self.token_table(ids)
+        allowed = None
+        if segments is not None:
+            length = ids.size(1)
+            causal = torch.ones(length, length, dtype=torch.bool, device=ids.device).tril()
+            same_conversation = segments[:, :, None] == segments[:, None, :]
+            allowed = (same_conversation & causal)[:, None]       # (batch, 1, length, length): the same for all heads
         for block in self.blocks:
-            x = block(x, self.rope_cos, self.rope_sin)
+            x = block(x, self.rope_cos, self.rope_sin, allowed)
         logits = self.out(self.norm(x))
         if targets is None:
             return logits, None

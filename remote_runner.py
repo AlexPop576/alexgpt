@@ -75,8 +75,11 @@ def main():
             name = file_name[:-4]
             if os.path.exists(os.path.join(JOBS, name + ".done")):
                 continue
-            with open(os.path.join(JOBS, file_name), encoding="utf-8") as file:
-                line = file.readline()
+            try:
+                with open(os.path.join(JOBS, file_name), encoding="utf-8") as file:
+                    line = file.readline()
+            except OSError:                       # renamed / removed while another job was running
+                continue
             command = parse(line)
             if command is None:
                 log(f"refused {file_name}: {line.strip()!r} (only 'python <script in this project>')")

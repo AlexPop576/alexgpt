@@ -35,6 +35,12 @@ parser.add_argument("--checkpoint", default="runs/supernova/final.pt")
 parser.add_argument("--format", choices=["base", "chat"], default="base")
 parser.add_argument("--label", default=None, help="name of the results file (default: from the checkpoint)")
 parser.add_argument("--grade", default=None, help="a results file: give the manual points")
+parser.add_argument("--name", default="Supernova", help="the model's name, for the system prompt (chat format)")
+parser.add_argument("--tools", action="store_true", help="chat format: run the tool calls (calc, wiki) like the app does")
+parser.add_argument("--no-system", action="store_true", help="chat format without the system prompt (like the first SFT)")
+parser.add_argument("--app", action="store_true",
+                    help="Singularity exactly like the web app: tool_router rules + live Wikipedia + generate_stream")
+parser.add_argument("--no-abstain", action="store_true", help="with --app: no 'no source' reply (the old behaviour)")
 args = parser.parse_args()
 
 
@@ -43,13 +49,18 @@ BASE_EXAMPLES = ("Question: What is the capital of Spain?\nAnswer: The capital o
                  "Întrebare: Câte picioare are un păianjen?\nRăspuns: Un păianjen are opt picioare.\n\n")
 
 
-def build_prompt(item, text_format):
+def build_prompt(item, text_format, extra=()):
     """The text the model sees. base: Question/Answer with 2 examples; chat: the special tokens."""
-    if text_format == "chat":
-        text = ""
+    if text_format == "chat":                        # exactly like the chat (alexgpt/sft_format.py)
+        from alexgpt.sft_format import chat_prompt
+        question = item["prompt"]
         if "context" in item:
-            text += "<|context|>" + item["context"]
-        return text + "<|user|>" + item["prompt"] + "<|assistant|>"
+            question = item["context"] + "\n\n" + question      # the text first, then the question (as in the SFT data)
+        messages = [{"role": "user", "content": question}]
+        if not args.no_system:                      # exactly what the chat sends: the system prompt first
+            from alexgpt.sft_format import system_prompt
+            messages.insert(0, {"role": "system", "content": system_prompt(args.name)})
+        return chat_prompt(messages + list(extra))
     question_word, answer_word = ("Question", "Answer") if item["lang"] == "en" else ("Întrebare", "Răspuns")
     text = BASE_EXAMPLES
     if "context" in item:
@@ -87,6 +98,73 @@ def generate(model, tokenizer, prompt, text_format, device):
     return answer.strip()
 
 
+# ====================================================================== tools (only with --tools)
+def eval_calc(expression):
+    """small safe calculator, only used if alexgpt/tools.py calc is not written yet"""
+    import ast
+    import math
+    import operator
+    operators = {ast.Add: operator.add, ast.Sub: operator.sub, ast.Mult: operator.mul, ast.Div: operator.truediv,
+                 ast.Pow: operator.pow, ast.USub: operator.neg, ast.Mod: operator.mod}
+    expression = re.sub(r"(\d+(?:\.\d+)?)\s*%\s*of\s*(\d+(?:\.\d+)?)", r"(\1/100)*\2", expression)
+
+    def walk(node):
+        if isinstance(node, ast.Expression):
+            return walk(node.body)
+        if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            return node.value
+        if isinstance(node, ast.BinOp) and type(node.op) in operators:
+            return operators[type(node.op)](walk(node.left), walk(node.right))
+        if isinstance(node, ast.UnaryOp) and type(node.op) in operators:
+            return operators[type(node.op)](walk(node.operand))
+        if isinstance(node, ast.Call) and isinstance(node.func, ast.Name) and node.func.id == "sqrt" and len(node.args) == 1:
+            return math.sqrt(walk(node.args[0]))
+        raise ValueError("not allowed")
+    value = walk(ast.parse(expression.strip(), mode="eval"))
+    return str(int(value)) if float(value).is_integer() else str(round(value, 6))
+
+
+def run_tool_for_eval(call):
+    try:
+        from alexgpt.tools import run_tool
+        return run_tool(call), "tools.py"
+    except NotImplementedError:
+        pass
+    except Exception as error:
+        return f"error: {error}", "tools.py"
+    name, _, arguments = call.partition(":")
+    arguments = arguments.strip()
+    try:
+        if name.strip() == "calc":
+            return eval_calc(arguments), "eval fallback"
+        if name.strip() == "wiki":
+            from gen_data_wiki import clean_and_cut, fetch_intro
+            found = fetch_intro("ro" if re.search(r"[ăâîșț]", arguments) else "en", arguments)
+            if not found:
+                return f"error: nothing found for '{arguments}'", "eval fallback"
+            return f"{found[0]} — {clean_and_cut(found[1])}", "eval fallback"
+    except Exception as error:
+        return f"error: {error}", "eval fallback"
+    return f"error: tool '{name}' not available in this evaluation", "eval fallback"
+
+
+def answer_with_tools(model, tokenizer, item, device):
+    """generate; if the model writes <|search|>tool: args, run it, add <|context|>result, generate again (max 2 calls)"""
+    extra, calls = [], []
+    for _ in range(3):
+        text = generate(model, tokenizer, build_prompt(item, "chat", extra), "chat", device)
+        if text.startswith("<|search|>"):
+            call = text[len("<|search|>"):].strip()
+            result, who = run_tool_for_eval(call)
+            calls.append(f"{call} -> {result[:60]} [{who}]")
+            extra += [{"role": "tool_call", "content": call}, {"role": "context", "content": result}]
+            continue
+        item["tool_calls"] = calls
+        return text
+    item["tool_calls"] = calls
+    return text
+
+
 # ====================================================================== checks
 def plain(text):
     """lowercase, no diacritics: "Dunărea" -> "dunarea" (so the checks don't fail on ă/ș/ț)"""
@@ -107,7 +185,13 @@ def contains(answer, values):
 
 
 def has_number(answer, value):
-    for token in re.findall(r"\d[\d.,]*\d|\d", answer):
+    """True if `value` is THE RESULT: the last number of the answer, or the number right after "=" / "is" /
+    "este" / "egal". "4 + 3 * 6 = 22" -> yes;  "3 * 6 = 18, plus 4 is 25" -> no (22 appears nowhere as a result).
+    (Before, any 22 anywhere counted, so random numbers in a wrong answer got the point.)"""
+    numbers = re.findall(r"\d[\d.,]*\d|\d", answer)
+    after_equals = re.findall(r"(?:=|\bis\b|\beste\b|\begal(?:\s+cu)?\b|\bsunt\b|\bare\b)\s*(?:about|aproximativ)?\s*(\d[\d.,]*\d|\d)", answer)
+    candidates = after_equals + numbers[-1:]
+    for token in candidates:
         try:
             if int(token.replace(".", "").replace(",", "")) == value:
                 return True
@@ -253,9 +337,55 @@ def grade(path):
 
 
 # ====================================================================== main
+def run_app(label):
+    """--app: every question goes through the same path as the web page (alexgpt/chat.py generate_stream),
+    so the router rules and the 'no source' reply are measured too.  Sampling like the app (temperature 0.7),
+    with a fixed seed per question so two runs can be compared."""
+    import numpy as np
+    from alexgpt.chat import SingularityChat, generate_stream
+    model = SingularityChat(args.checkpoint)
+    model.abstain_enabled = not args.no_abstain
+    items = [json.loads(line) for line in open(QUESTIONS, encoding="utf-8")]
+    print(f"{args.checkpoint} like the app, abstain={'off' if args.no_abstain else 'on'}, {len(items)} questions")
+    start = time.time()
+    for number, item in enumerate(items, 1):
+        question = item["prompt"]
+        if "context" in item:
+            question = item["context"] + "\n\n" + question
+        rng = np.random.default_rng(number)
+        answer, calls, abstained = "", [], False
+        for step in generate_stream(model, question, 600, 0.7, rng, []):
+            if step["type"] == "tool":
+                calls.append(step["call"] + (" [unused]" if step.get("unused") else "") + " -> " + step["result"][:60])
+            elif step["type"] == "token":
+                answer += step["char"]
+                abstained = abstained or bool(step.get("abstain"))
+        item["answer"] = answer.replace("<|endoftext|>", "").strip()
+        item["tool_calls"] = calls
+        item["abstained"] = abstained
+        score_item(item)
+        mark = "A" if abstained else ("…" if item["score"] is None else ("✓" if item["score"] == 1 else ("~" if item["score"] > 0 else "✗")))
+        print(f"  {number:3d} {mark} {item['id']:16s} {item['answer'][:70]!r}", flush=True)
+        time.sleep(1)                                   # Wikipedia answers 429 to fast requests
+    os.makedirs("runs/bench", exist_ok=True)
+    path = f"runs/bench/{label}.jsonl"
+    save(items, path)
+    total = report(items, label)
+    for category in CATEGORIES:
+        count = sum(1 for item in items if item["category"] == category and item["abstained"])
+        if count:
+            print(f"  abstained in {category}: {count}")
+    print(f"\n{time.time() - start:.0f} s.  Answers in {path}.")
+    with open("runs/benchmarks.txt", "a", encoding="utf-8") as file:
+        file.write(time.strftime("%Y-%m-%d %H:%M  ") + f"AlexGPT-100 {label}: {total:.1f} (before manual grading)\n")
+
+
 def main():
     if args.grade:
         grade(args.grade)
+        return
+    if args.app:
+        run_app(args.label or ("app-no-abstain" if args.no_abstain else "app-abstain"))
         return
     device = "cuda" if torch.cuda.is_available() else "cpu"
     saved = torch.load(args.checkpoint, map_location="cpu", weights_only=False)
@@ -268,7 +398,10 @@ def main():
     print(f"{args.checkpoint} (step {saved.get('step')}) on {device}, format {args.format}, {len(items)} questions")
     start = time.time()
     for number, item in enumerate(items, 1):
-        item["answer"] = generate(model, tokenizer, build_prompt(item, args.format), args.format, device)
+        if args.tools and args.format == "chat":
+            item["answer"] = answer_with_tools(model, tokenizer, item, device)
+        else:
+            item["answer"] = generate(model, tokenizer, build_prompt(item, args.format), args.format, device)
         score_item(item)
         mark = "…" if item["score"] is None else ("✓" if item["score"] == 1 else ("~" if item["score"] > 0 else "✗"))
         print(f"  {number:3d} {mark} {item['id']:16s} {item['answer'][:70]!r}", flush=True)

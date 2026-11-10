@@ -131,8 +131,8 @@ if os.path.exists(CHECKPOINT):
     optimizer.load_state_dict(state["optimizer"])
     step = state["step"]
     rng.bit_generator.state = state["data_rng"]
-    torch.set_rng_state(state["torch_rng"])
-    torch.cuda.set_rng_state(state["cuda_rng"])
+    torch.set_rng_state(state["torch_rng"].cpu())     # map_location moved it to the GPU: must be on the CPU
+    torch.cuda.set_rng_state(state["cuda_rng"].cpu())
     random.setstate(state["python_rng"])
     log(f"\n=== resumed from step {step} ({datetime.datetime.now():%Y-%m-%d %H:%M}) ===")
 else:

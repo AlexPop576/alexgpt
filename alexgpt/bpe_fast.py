@@ -139,10 +139,12 @@ class FastBPE:
             self.cache[chunk] = ids
         return ids
 
-    def encode(self, text):
+    def encode(self, text, allow_special=True):
+        """allow_special=False: "<|user|>" written inside a message stays plain text (several normal tokens).
+        Use it for anything a person wrote (chat messages, data files); the markers are then added as ids."""
         ids = []
         for part in SPECIAL_PATTERN.split(normalize(text)):
-            if part in self.special_ids:
+            if allow_special and part in self.special_ids:
                 ids.append(self.special_ids[part])
             elif part:
                 for chunk in CHUNK_PATTERN.findall(part):

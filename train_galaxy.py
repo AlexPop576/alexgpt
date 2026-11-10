@@ -35,7 +35,6 @@ print(f"tokens: {len(train_ids):,} train, {len(val_ids):,} val")
 
 
 def random_batch(source):
-    # BATCH random windows; targets = the same windows moved one token to the right
     starts = torch.randint(0, len(source) - CONTEXT - 1, (BATCH,))
     inputs = torch.stack([source[start : start + CONTEXT] for start in starts])
     targets = torch.stack([source[start + 1 : start + CONTEXT + 1] for start in starts])
@@ -49,7 +48,6 @@ use_bf16 = device == "cuda" and torch.cuda.is_bf16_supported()
 
 
 def learning_rate_at(step):
-    # warm up, then slowly go down (cosine) to 10% of the start
     if step < WARMUP:
         return LEARNING_RATE * (step + 1) / WARMUP
     progress = (step - WARMUP) / (MAX_STEPS - WARMUP)
@@ -72,7 +70,6 @@ def average_loss(source, batches=40):
 @torch.no_grad()
 def sample(prompt, tokens=80, temperature=0.8):
     model.eval()
-    # the same "dice" every time: if the reply changes, it is because the model learned, not luck
     dice = torch.Generator(device=device).manual_seed(123)
     ids = torch.tensor([tokenizer.encode(prompt)], device=device)
     for _ in range(tokens):
@@ -94,10 +91,10 @@ for step in range(MAX_STEPS):
     inputs, targets = random_batch(train_ids)
     with torch.autocast(device_type=device, dtype=torch.bfloat16, enabled=use_bf16):
         _, loss = model(inputs, targets)
-    optimizer.zero_grad(set_to_none=True)        # forget the blame from the last step
-    loss.backward()                              # the same backprop you wrote, done by PyTorch
+    optimizer.zero_grad(set_to_none=True)       
+    loss.backward()                              
     torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-    optimizer.step()                             # update every weight
+    optimizer.step()                             
 
     if step % SAMPLE_EVERY == 0:
         reply = sample(PROMPT, SAMPLE_TOKENS)[len(PROMPT):].split("\n**")[0].replace("\n", " ")

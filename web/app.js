@@ -10,6 +10,8 @@ const ICONS = {
   Pulsar:      '<path d="M9 9L14.8 1.8M9 9L3.2 16.2"/><path d="M11.6 5.8l3.8-1.6-1.1-2.3M6.4 12.2l-3.8 1.6 1.1 2.3" stroke-opacity=".5"/><ellipse cx="9" cy="9" rx="7" ry="2.3" stroke-opacity=".55"/><circle cx="9" cy="9" r="2.2" fill="currentColor" stroke="none"/>',
   // a spiral galaxy with two arms around a bright core
   Galaxy:      '<path d="M9 9c1.5-1.7 4.3-1.4 5.4.6 1.3 2.3-.2 5.2-2.9 5.6"/><path d="M9 9c-1.5 1.7-4.3 1.4-5.4-.6-1.3-2.3.2-5.2 2.9-5.6"/><circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/><circle cx="15.2" cy="3.4" r=".6" fill="currentColor" stroke="none"/><circle cx="2.8" cy="14.6" r=".6" fill="currentColor" stroke="none"/>',
+  // a nova: a small hot star with rays, pulling a dotted stream of gas from its bigger companion
+  Nova:        '<circle cx="11.6" cy="6.8" r="1.6" fill="currentColor" stroke="none"/><path d="M11.6 2.6v1.4M11.6 9.6v1.4M7.4 6.8h1.4M14.4 6.8h1.4" stroke-opacity=".7"/><circle cx="4.8" cy="12.6" r="2.7" fill="currentColor" fill-opacity=".18"/><path d="M7 11.2c1.7-.7 3-1.9 3.9-3.3" stroke-dasharray="1 1.5"/>',
   // an exploding star: bright core, shock wave, flying rays
   Supernova:   '<circle cx="9" cy="9" r="2.3" fill="currentColor" fill-opacity=".35"/><circle cx="9" cy="9" r="5" stroke-dasharray="1.4 1.9"/><path d="M9 .8v2M9 15.2v2M.8 9h2M15.2 9h2M3.2 3.2l1.4 1.4M13.4 13.4l1.4 1.4M3.2 14.8l1.4-1.4M13.4 4.6l1.4-1.4"/>',
   // a black hole: a dark centre, its bright edge, and the disc of matter crossing in front
@@ -22,7 +24,9 @@ const FAMILY = [
   { name: "Nebula",      dark: "#e9a6dc", light: "#a1408c", note: "MLP · sees 8 characters" },
   { name: "Pulsar",      dark: "#7fd8ea", light: "#1d8199", note: "Transformer · sees 32 characters" },
   { name: "Galaxy",      dark: "#a9a5ff", light: "#5650d4", note: "GPU · BPE · conversations" },
-  { name: "Supernova",   dark: "#ff9d6e", light: "#cc5326", note: "Knows things" },
+  { name: "Nova",        dark: "#ff8fa3", light: "#c23a55", note: "Supernova before SFT: continues your text" },
+  { name: "Supernova",   dark: "#ff9d6e", light: "#cc5326", note: "Answers you, EN + RO" },
+  { name: "Singularity Base", dark: "#c9c5ff", light: "#4a3f8f", note: "Singularity before SFT: continues your text" },
   { name: "Singularity", dark: "#e6e3ff", light: "#2c2548", note: "Answers your questions" },
 ];
 
@@ -58,7 +62,7 @@ function makeIcon(name, size) {
   const span = document.createElement("span");
   span.className = "model-icon";
   span.dataset.model = name;
-  const paths = ICONS[name] || ICONS.Singularity;
+  const paths = ICONS[name] || ICONS[name.split(" ")[0]] || ICONS.Singularity;   // "Supernova Chat" -> Supernova's icon
   span.innerHTML =
     '<svg width="' + size + '" height="' + size + '" viewBox="0 0 18 18" fill="none" stroke="currentColor" ' +
     'stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + paths + "</svg>";
@@ -1152,6 +1156,250 @@ function updateSendButton() {
   $("sendButton").disabled = !state.generating && ($("input").value.trim() === "" || !state.current);
 }
 
+// ---------------------------------------------------------------- tools: a status line and a source card
+// While a tool runs: "Searching Wikipedia" with a moving shine.  Then: "Searched Wikipedia" (click = what it found).
+const TOOL_LABELS = {
+  wiki: ["Searching Wikipedia", "Searched Wikipedia", "search"],
+  calc: ["Using the calculator", "Used the calculator", "calc"],
+  weather: ["Checking the weather", "Checked the weather", "cloud"],
+  now: ["Checking the time", "Checked the time", "clock"],
+  convert: ["Converting units", "Converted units", "swap"],
+  dice: ["Rolling the dice", "Rolled the dice", "die"],
+  coin: ["Flipping a coin", "Flipped a coin", "coin"],
+  pick: ["Picking one", "Picked one", "list"],
+  memory_save: ["Saving to memory", "Saved to memory", "memory"],
+  memory_get: ["Checking memory", "Checked memory", "memory"],
+  today_in_history: ["Looking up this day in history", "Looked up this day in history", "calendar"],
+};
+const TOOL_ICONS = {     // small line drawings, 16x16, drawn with the text color
+  search: '<circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/>',
+  calc: '<rect x="3" y="1.5" width="10" height="13" rx="2"/><path d="M5.5 4.5h5M5.5 8h1M9.5 8h1M5.5 11h1M9.5 11h1"/>',
+  cloud: '<path d="M4.5 12.5h7a3 3 0 0 0 .3-6 4 4 0 0 0-7.6 1A2.5 2.5 0 0 0 4.5 12.5z"/>',
+  clock: '<circle cx="8" cy="8" r="6"/><path d="M8 4.5V8l2.5 1.5"/>',
+  swap: '<path d="M3 5.5h10M10.5 3 13 5.5 10.5 8M13 10.5H3M5.5 8 3 10.5 5.5 13"/>',
+  die: '<rect x="2.5" y="2.5" width="11" height="11" rx="2.5"/><circle cx="5.7" cy="5.7" r=".6"/><circle cx="10.3" cy="10.3" r=".6"/><circle cx="8" cy="8" r=".6"/>',
+  coin: '<circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="3.5"/>',
+  list: '<path d="M6 4.5h7M6 8h7M6 11.5h7M3 4.5h.5M3 8h.5M3 11.5h.5"/>',
+  memory: '<path d="M4 2.5h8v11l-4-2.5-4 2.5z"/>',
+  calendar: '<rect x="2.5" y="3.5" width="11" height="10" rx="2"/><path d="M2.5 7h11M5.5 2v3M10.5 2v3"/>',
+};
+
+function toolIcon(name) {
+  return '<svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.4" ' +
+    'stroke-linecap="round" stroke-linejoin="round">' + (TOOL_ICONS[name] || TOOL_ICONS.search) + "</svg>";
+}
+
+function toolWhat(step) {           // "wiki: en: NATO" -> "NATO"
+  return step.call.replace(/^[^:]*:\s*/, "").replace(/^(ro|en):\s*/, "").trim();
+}
+
+function makeToolStatus(step, running) {
+  const labels = TOOL_LABELS[step.tool] || ["Using " + step.tool, "Used " + step.tool, "search"];
+  const box = document.createElement("div");
+  box.className = "tool-status" + (running ? " running" : "");
+  const head = document.createElement("button");
+  head.type = "button";
+  head.className = "ts-head";
+  head.innerHTML = '<span class="ts-icon">' + toolIcon(labels[2]) + '</span><span class="ts-label"></span>' +
+    '<span class="ts-what"></span><svg class="ts-chevron" viewBox="0 0 16 16" width="12" height="12" fill="none" ' +
+    'stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4l4 4-4 4"/></svg>';
+  head.querySelector(".ts-label").textContent = running ? labels[0] : labels[1];
+  const what = toolWhat(step);
+  if (what) head.querySelector(".ts-what").textContent = "“" + (what.length > 48 ? what.slice(0, 47) + "…" : what) + "”";
+  const detail = document.createElement("div");
+  detail.className = "ts-detail";
+  detail.hidden = true;
+  head.addEventListener("click", () => {
+    if (box.classList.contains("running")) return;
+    detail.hidden = !detail.hidden;
+    box.classList.toggle("open", !detail.hidden);
+  });
+  box.append(head, detail);
+  box._labels = labels;
+  return box;
+}
+
+function finishToolStatus(box, step) {
+  box.classList.remove("running");
+  box.classList.add("done");
+  const label = box.querySelector(".ts-label");
+  if (step.unused) {
+    label.textContent = "Searched Wikipedia · nothing useful found";
+    box.classList.add("failed");
+  } else if (step.result.startsWith("error")) {
+    label.textContent = box._labels[1] + " · didn't work";
+    box.classList.add("failed");
+  } else {
+    label.textContent = box._labels[1];
+  }
+  const detail = box.querySelector(".ts-detail");
+  detail.textContent = "";
+  if (step.source) {                                 // Wikipedia: the page as a card + the passage the model read
+    detail.classList.add("with-source");
+    detail.append(makeSourceCard(step.source));
+    const passage = document.createElement("div");
+    passage.className = "ts-passage";
+    passage.textContent = step.result.replace(/^[^—]*—\s*/, "").replace(/\s*\(https?:\/\/[^)]*\)\s*$/, "");
+    detail.append(passage);
+  } else {
+    detail.textContent = step.result;
+  }
+}
+
+function makeSourceCard(source) {
+  const card = document.createElement("a");
+  card.className = "source-card";
+  card.href = source.url;
+  card.target = "_blank";
+  card.rel = "noopener noreferrer";
+  let host = "";
+  try { host = new URL(source.url).hostname; } catch (error) { host = ""; }
+  const icon = document.createElement("span");
+  icon.className = "sc-icon";
+  const image = document.createElement("img");
+  image.alt = "";
+  image.src = "https://" + (host || "en.wikipedia.org") + "/static/favicon/wikipedia.ico";   // the site's own favicon
+  image.addEventListener("error", () => { image.remove(); icon.textContent = "W"; icon.classList.add("letter"); });
+  icon.append(image);
+  const words = document.createElement("span");
+  words.className = "sc-words";
+  const title = document.createElement("span");
+  title.className = "sc-title";
+  title.textContent = source.title;
+  const site = document.createElement("span");
+  site.className = "sc-site";
+  site.textContent = host || source.site || "";
+  words.append(title, site);
+  const arrow = document.createElement("span");
+  arrow.className = "sc-arrow";
+  arrow.innerHTML = '<svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" ' +
+    'stroke-linecap="round" stroke-linejoin="round"><path d="M5.5 10.5l5-5M6.5 5.5h4v4"/></svg>';
+  card.append(icon, words, arrow);
+  return card;
+}
+
+function addSourceCards(body, sources) {
+  if (!sources || sources.length === 0) return;
+  const row = document.createElement("div");
+  row.className = "source-row";
+  for (const source of sources) row.append(makeSourceCard(source));
+  body.append(row);
+}
+
+// ---------------------------------------------------------------- markdown
+// The model writes markdown ("| a | b |", "**bold**", "- item").  While it writes, the raw text is shown (letter by
+// letter, with the confidence colors); when the reply is finished it becomes formatted HTML, and the colors are put
+// back on the letters that are still visible.
+function escapeHtml(text) {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
+
+function markdownInline(text) {
+  let html = escapeHtml(text);
+  html = html.replace(/`([^`]+)`/g, "<code>$1</code>");
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/(^|[^*\w])\*([^*\s][^*]*)\*(?!\w)/g, "$1<em>$2</em>");
+  html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+  return html;
+}
+
+function markdownToHtml(source) {
+  const lines = source.replace(/\r/g, "").split("\n");
+  const out = [];
+  let paragraph = [];
+  const flush = () => { if (paragraph.length) { out.push("<p>" + paragraph.map(markdownInline).join("<br>") + "</p>"); paragraph = []; } };
+  const cells = (line) => line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map((cell) => cell.trim());
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (/^\s*```/.test(line)) {                                  // ``` code block ```
+      flush();
+      const code = [];
+      i += 1;
+      while (i < lines.length && !/^\s*```/.test(lines[i])) { code.push(lines[i]); i += 1; }
+      out.push("<pre><code>" + escapeHtml(code.join("\n")) + "</code></pre>");
+      i += 1;
+      continue;
+    }
+    if (/^\s*\|.*\|/.test(line) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {   // a table
+      flush();
+      const head = cells(line);
+      let html = "<div class=\"md-table\"><table><thead><tr>" + head.map((c) => "<th>" + markdownInline(c) + "</th>").join("") + "</tr></thead><tbody>";
+      i += 2;
+      while (i < lines.length && /^\s*\|/.test(lines[i])) {
+        html += "<tr>" + cells(lines[i]).map((c) => "<td>" + markdownInline(c) + "</td>").join("") + "</tr>";
+        i += 1;
+      }
+      out.push(html + "</tbody></table></div>");
+      continue;
+    }
+    const heading = line.match(/^\s*(#{1,4})\s+(.*)$/);
+    if (heading) { flush(); out.push("<h" + (heading[1].length + 2) + ">" + markdownInline(heading[2]) + "</h" + (heading[1].length + 2) + ">"); i += 1; continue; }
+    if (/^\s*([-*•]|\d+[.)])\s+/.test(line)) {                 // a list
+      flush();
+      const ordered = /^\s*\d/.test(line);
+      const items = [];
+      while (i < lines.length && /^\s*([-*•]|\d+[.)])\s+/.test(lines[i])) {
+        items.push("<li>" + markdownInline(lines[i].replace(/^\s*([-*•]|\d+[.)])\s+/, "")) + "</li>");
+        i += 1;
+      }
+      out.push((ordered ? "<ol>" : "<ul>") + items.join("") + (ordered ? "</ol>" : "</ul>"));
+      continue;
+    }
+    if (/^\s*(---+|\*\*\*+)\s*$/.test(line)) { flush(); out.push("<hr>"); i += 1; continue; }
+    if (line.trim() === "") { flush(); i += 1; continue; }
+    paragraph.push(line);
+    i += 1;
+  }
+  flush();
+  return out.join("");
+}
+
+// pieces = [[text, level], ...] of the reply.  The formatted text is a subsequence of the raw text (markdown only
+// removes characters like "|" and "**"), so walking both together gives every visible letter its level again.
+function applyMarkdown(container, pieces) {
+  const raw = [];
+  const levels = [];
+  for (const [pieceText, level] of pieces) {
+    for (const char of pieceText) { raw.push(char); levels.push(level); }
+  }
+  container.innerHTML = markdownToHtml(raw.join(""));
+  container.classList.add("md");
+  let position = 0;
+  const walker = document.createTreeWalker(container, NodeFilter.SHOW_TEXT);
+  const textNodes = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode);
+  for (const node of textNodes) {
+    const fragment = document.createDocumentFragment();
+    let runText = "";
+    let runLevel = null;
+    const close = () => {
+      if (!runText) return;
+      if (runLevel === "p4" || runLevel === null) fragment.append(document.createTextNode(runText));
+      else {
+        const span = document.createElement("span");
+        span.className = "tok settled " + runLevel;
+        span.dataset.level = runLevel;
+        span.textContent = runText;
+        fragment.append(span);
+      }
+      runText = "";
+    };
+    for (const char of node.data) {
+      let found = -1;
+      for (let look = position; look < Math.min(raw.length, position + 60); look += 1) {
+        if (raw[look] === char) { found = look; break; }
+      }
+      const level = found >= 0 ? levels[found] : "p4";
+      if (found >= 0) position = found + 1;
+      if (level !== runLevel) { close(); runLevel = level; }
+      runText += char;
+    }
+    close();
+    node.replaceWith(fragment);
+  }
+}
+
 async function send(prompt) {
   if (!state.current) return;
   const chat = ensureChat(prompt);
@@ -1181,6 +1429,10 @@ async function send(prompt) {
   let count = 0;
   let confidenceSum = 0;
   let ending = "";
+  const toolSteps = [];          // saved with the reply, so the status lines come back when the chat is opened again
+  const sources = [];
+  const toolBoxes = {};
+  let holdUntil = 0;             // the reply waits a moment, so the "Searching…" animation can be seen
 
   // The server sends letters as fast as it can; they wait in this queue
   // and are shown at the speed chosen with the Speed slider (which you can move while it writes).
@@ -1196,7 +1448,18 @@ async function send(prompt) {
 
     const fragment = document.createDocumentFragment();
     const batch = [];
+    let latestModelStep = null;
     for (const step of drawn) {
+      if (step.grounded) {                                  // sentences copied from the article, not written by the model
+        const span = document.createElement("span");
+        span.dataset.level = "p4";
+        span.className = "tok new p4 grounded";
+        span.textContent = step.char;
+        fragment.append(span);
+        batch.push(span);
+        continue;
+      }
+      latestModelStep = step;
       flowRecord(step);                                     // flow.js keeps them: ‹ › go back to earlier tokens
       count += 1;
       confidenceSum += step.prob;
@@ -1213,8 +1476,12 @@ async function send(prompt) {
     // once the fade-in is over, glue these letters to the text before them
     setTimeout(() => settleLetters(batch), 500);
 
-    const latest = drawn[drawn.length - 1];
+    const latest = latestModelStep;
 
+    if (latest === null) {
+      scrollToBottom(false);
+      return;
+    }
     if (panelOpen()) {
       drawContext(latest.context);
       $("chosenChar").textContent = visibleChar(latest.char);
@@ -1240,6 +1507,11 @@ async function send(prompt) {
   function pump() {
     if (state.paused || controller.signal.aborted || pending.length === 0) {
       pumping = false;
+      return;
+    }
+    const wait = holdUntil - performance.now();
+    if (wait > 0) {                         // a tool status is still animating: the reply starts after it
+      setTimeout(pump, wait);
       return;
     }
     const delay = parseInt($("speed").value);
@@ -1307,6 +1579,27 @@ async function send(prompt) {
             if (step.char === END_MARKER[0]) held.push(step);
             else show(step);
           }
+        } else if (step.type === "tool_start") {
+          const box = makeToolStatus(step, true);              // "Searching Wikipedia", with a moving shine
+          box._started = performance.now();
+          toolBoxes[step.call] = box;
+          bot.text.parentNode.insertBefore(box, bot.text);
+          holdUntil = Math.max(holdUntil, performance.now() + 900);
+          scrollToBottom(false);
+        } else if (step.type === "tool") {
+          let box = toolBoxes[step.call];
+          if (!box) {
+            box = makeToolStatus(step, true);
+            box._started = performance.now();
+            bot.text.parentNode.insertBefore(box, bot.text);
+          }
+          const shownFor = performance.now() - box._started;
+          const finishIn = Math.max(0, 900 - shownFor);       // fast tools (calc) still show their animation briefly
+          setTimeout(() => finishToolStatus(box, step), finishIn);
+          holdUntil = Math.max(holdUntil, performance.now() + finishIn + 150);
+          toolSteps.push({ tool: step.tool, call: step.call, result: step.result, unused: !!step.unused, source: step.source || null });
+        } else if (step.type === "source") {
+          sources.push({ title: step.title, url: step.url, site: step.site });
         } else if (step.type === "error") {
           ending = "Error: " + step.message;               // e.g. out of GPU memory: the server says what broke
           const note = document.createElement("span");
@@ -1363,7 +1656,11 @@ async function send(prompt) {
     if (node.nodeType === Node.TEXT_NODE) pieces.push([node.data, "p4"]);
     else if (node.dataset && node.dataset.level) pieces.push([node.textContent, node.dataset.level]);
   }
-  chat.messages.push({ role: "bot", text: replyText, pieces: pieces, model: state.current });
+  const savedTurn = { role: "bot", text: replyText, pieces: pieces, model: state.current };
+  if (toolSteps.length) savedTurn.tools = toolSteps;
+  if (sources.length) savedTurn.sources = sources;
+  chat.messages.push(savedTurn);
+  applyMarkdown(bot.text, pieces);
   for (const note of errorNotes) bot.text.append(note);
   chat.updated = Date.now();
   saveChats();
@@ -1749,6 +2046,42 @@ const SCENES = {
     };
   },
 
+  // Nova: a white dwarf pulls a stream of gas from its companion star; every few seconds the gas flares up
+  Nova: (color) => {
+    let gas = [];
+    const warm = [255, 176, 130];
+    return {
+      init() { gas = []; },
+      draw(context, delta) {
+        drawStars(context, 0.75);
+        const x = cosmos.width * 0.78, y = cosmos.height * 0.3;
+        const angle = cosmos.time * 0.22;
+        const companionX = x + Math.cos(angle) * 95, companionY = y + Math.sin(angle) * 36;
+        glow(context, companionX, companionY, 40, warm, 0.3);
+        context.fillStyle = rgba(warm, 0.9);
+        context.beginPath(); context.arc(companionX, companionY, 5, 0, 6.28); context.fill();
+        if (Math.random() < delta * 45) gas.push({ progress: 0, bend: random(-14, 14), size: random(0.8, 1.8) });
+        for (const piece of gas) {
+          piece.progress += delta * 0.42;
+          const t = piece.progress;
+          // a curved path from the companion to the dwarf, bending around it
+          const middleX = (companionX + x) / 2 + piece.bend - Math.sin(angle) * 30;
+          const middleY = (companionY + y) / 2 + piece.bend * 0.5 + Math.cos(angle) * 30;
+          const px = (1 - t) * (1 - t) * companionX + 2 * (1 - t) * t * middleX + t * t * x;
+          const py = (1 - t) * (1 - t) * companionY + 2 * (1 - t) * t * middleY + t * t * y;
+          context.fillStyle = rgba(t < 0.5 ? warm : color, 0.75 * Math.sin(Math.PI * Math.min(1, t)));
+          context.fillRect(px, py, piece.size, piece.size);
+        }
+        gas = gas.filter((piece) => piece.progress < 1);
+        const cycle = cosmos.time % 9;
+        const flare = cycle < 1.4 ? Math.sin(cycle / 1.4 * Math.PI) : 0;    // the gas ignites: a short, bright flash
+        glow(context, x, y, 26 + 130 * flare, color, 0.2 + 0.5 * flare);
+        context.fillStyle = rgba([255, 255, 255], 0.9);
+        context.beginPath(); context.arc(x, y, 2.2, 0, 6.28); context.fill();
+      },
+    };
+  },
+
   // Singularity: a black hole; hot matter spirals in along a glowing disc and disappears
   Singularity: (color) => {
     let matter = [];
@@ -1811,6 +2144,7 @@ const TRAILS = {
   Nebula:      { every: 0.09, speedX: [-6, 6],  speedY: [-6, 6],    life: 1.0,  size: [2.2, 3.4], gravity: 0, soft: true }, // soft puffs
   Pulsar:      { every: 0.18, speedX: [0, 0],   speedY: [0, 0],     life: 0.8,  size: [1, 1],     gravity: 0, ring: true }, // a small ring
   Galaxy:      { every: 0.09, speedX: [-9, 9],  speedY: [8, 22],    life: 1.0,  size: [1.6, 2.6], gravity: 14, star: true }, // little falling stars
+  Nova:        { every: 0.11, speedX: [-10, 10], speedY: [-10, 10], life: 0.8, size: [1.6, 2.6], gravity: 0, soft: true }, // warm glow puffs
   Supernova:   { every: 0.22, count: 6, speedX: [-34, 34], speedY: [-34, 34], life: 0.6, size: [1.1, 2.0], gravity: 0 }, // tiny bursts
   Singularity: { every: 0.08, speedX: [0, 0],   speedY: [0, 0],     life: 0.75, size: [0.8, 1.4], gravity: 0, orbit: true }, // pulled in
 };
@@ -1820,7 +2154,7 @@ let activeCaret = null;              // the cursor of the reply being written: i
 
 function emitFromCaret(caret) {
   if (cosmos.reducedMotion || !caret || !caret.isConnected || !cosmos.model) return;
-  const trail = TRAILS[cosmos.model] || TRAILS.Spark;
+  const trail = TRAILS[cosmos.model] || TRAILS[String(cosmos.model).split(" ")[0]] || TRAILS.Spark;
   const now = performance.now() / 1000;
   if (now - lastSparkTime < trail.every) return;
   lastSparkTime = now;
@@ -1881,7 +2215,7 @@ function drawSparks(context, delta) {
 
 function setCosmosModel(name) {
   if (!cosmos.canvas) return;
-  const makeScene = SCENES[name] || SCENES.Spark;
+  const makeScene = SCENES[name] || SCENES[name.split(" ")[0]] || SCENES.Spark;
   const color = hexToRgb(modelColor(name));
   // fade out, switch universe, fade in
   cosmos.canvas.classList.add("switching");
@@ -1934,6 +2268,17 @@ let currentChatId = null;
 
 function loadChats() {
   try { chats = JSON.parse(localStorage.getItem(CHATS_KEY)) || []; } catch (e) { chats = []; }
+  // once: the base model is now called Nova, and "Supernova Chat" is now just Supernova
+  if (loadPreference("alexgpt-nova-renamed") !== "yes") {
+    const renamed = { "Supernova": "Nova", "Supernova Chat": "Supernova" };
+    for (const chat of chats) {
+      if (renamed[chat.model]) chat.model = renamed[chat.model];
+      for (const turn of chat.messages || []) if (renamed[turn.model]) turn.model = renamed[turn.model];
+    }
+    if (renamed[loadPreference("alexgpt-model")]) savePreference("alexgpt-model", renamed[loadPreference("alexgpt-model")]);
+    saveChats();
+    savePreference("alexgpt-nova-renamed", "yes");
+  }
 }
 function saveChats() {
   try { localStorage.setItem(CHATS_KEY, JSON.stringify(chats)); } catch (e) { /* storage full or blocked */ }
@@ -2027,7 +2372,14 @@ function addStoredBotMessage(turn) {
   } else {
     text.textContent = turn.text;
   }
-  body.append(meta, text);
+  body.append(meta);
+  for (const step of turn.tools || []) {
+    const box = makeToolStatus(step, false);
+    finishToolStatus(box, step);
+    body.append(box);
+  }
+  body.append(text);
+  applyMarkdown(text, turn.pieces || [[turn.text, "p4"]]);
   message.append(avatar, body);
   $("messages").append(message);
 }

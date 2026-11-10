@@ -1,0 +1,17 @@
+# one question per line; lines starting with # are ignored
+salut! cine ești?
+who made you?
+cât face 347 * 29?
+what is 15% of 860?
+care este capitala Poloniei?
+who invented the telephone?
+cine este Zorvan Pelteanu?
+ce e un pointer în C? răspunde pe scurt
+explică-mi diferența dintre TCP și UDP într-un tabel
+rezumă într-o propoziție: Ieri a plouat toată ziua, așa că am rămas acasă și am citit o carte. Seara am gătit paste și am vorbit cu un prieten la telefon.
+spune-mi o glumă
+sunt trist azi
+ce vreme e la Cluj acum?
+care e cel mai mare prețul bitcoin mâine?
+write a python function that adds two numbers
+am 20 de ani și mă cheamă Mihai, ține minte

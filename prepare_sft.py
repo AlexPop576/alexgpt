@@ -22,10 +22,13 @@ SOURCES = {
     "smol_summarize":  ("HuggingFaceTB/smoltalk", "smol-summarize",         "en", 10000, "summaries of a given text"),
     "smol_rewrite":    ("HuggingFaceTB/smoltalk", "smol-rewrite",           "en", 6000,  "rewrite / fix a given text"),
     "smol_constraints": ("HuggingFaceTB/smoltalk", "smol-constraints",      "en", 6000,  "follow instructions exactly (3 bullets, one word, ...)"),
-    "ro_ultrachat":    ("OpenLLM-Ro/ro_sft_ultrachat", None, "ro", 25000, "Romanian conversations (translated)"),
+    "ro_ultrachat":    ("OpenLLM-Ro/ro_sft_ultrachat", None, "ro", 70000, "Romanian conversations (translated); 2/3 say \"Ca model de limbaj AI\", build_sft_mix.py throws those out"),
     "ro_alpaca":       ("OpenLLM-Ro/ro_sft_alpaca",    None, "ro", 10000, "Romanian instructions (translated)"),
     "ro_dolly":        ("OpenLLM-Ro/ro_sft_dolly",     None, "ro", 8000,  "Romanian questions, some with a text (translated)"),
     "ro_norobots":     ("OpenLLM-Ro/ro_sft_norobots",  None, "ro", 9500,  "Romanian, written by people (translated)"),
+    # added for SFT v2 (natural conversations written by people, not by a model)
+    "en_oasst":        ("OpenAssistant/oasst_top1_2023-08-25", None, "mixed", 13000, "OpenAssistant: real people + the best-rated answers (all languages; build_sft_mix keeps EN)"),
+    "ro_oasst":        ("OpenLLM-Ro/ro_sft_oasst",     None, "ro", 10000, "OpenAssistant translated to Romanian"),
 }
 
 
@@ -44,10 +47,28 @@ def to_messages(row):
             for turn in turns:
                 role = turn.get("role") or turn.get("from")
                 content = turn.get("content") if "content" in turn else turn.get("value")
-                role = {"human": "user", "gpt": "assistant", "model": "assistant", "bot": "assistant"}.get(role, role)
+                role = {"human": "user", "gpt": "assistant", "model": "assistant", "bot": "assistant",
+                        "prompter": "user"}.get(role, role)
                 if role in ("system", "user", "assistant") and isinstance(content, str):
                     messages.append({"role": role, "content": content.strip()})
             return messages
+    # ChatML text (OpenAssistant top1): "<|im_start|>user\n...<|im_end|>\n<|im_start|>assistant\n...<|im_end|>"
+    text = row.get("text")
+    if isinstance(text, str) and "<|im_start|>" in text:
+        messages = []
+        for part in text.split("<|im_start|>")[1:]:
+            role, _, content = part.partition("\n")
+            content = content.replace("<|im_end|>", "").strip()
+            if role.strip() in ("system", "user", "assistant"):
+                messages.append({"role": role.strip(), "content": content})
+        return messages
+    # UltraChat style: "data" = [user, assistant, user, assistant, ...] as plain strings
+    turns = row.get("data")
+    if isinstance(turns, list) and len(turns) >= 2 and all(isinstance(turn, str) for turn in turns):
+        messages = []
+        for index, text in enumerate(turns):
+            messages.append({"role": "user" if index % 2 == 0 else "assistant", "content": text.strip()})
+        return messages
     # instruction style: instruction (+ input / context) -> output / response
     instruction = row.get("instruction") or row.get("prompt") or row.get("question")
     answer = row.get("output") or row.get("response") or row.get("answer")
@@ -104,6 +125,9 @@ def download(source):
             with open(out_path, "a", encoding="utf-8") as file:
                 for row in dataset:
                     rows_read += 1
+                    if rows_read == 1:                               # keep one raw row, to see the format
+                        with open(os.path.join(OUT_DIR, f"{source}.sample.json"), "w", encoding="utf-8") as sample:
+                            json.dump(row, sample, ensure_ascii=False, indent=1, default=str)
                     messages = to_messages(row)
                     if messages and good(messages):
                         file.write(json.dumps({"messages": messages}, ensure_ascii=False) + "\n")
@@ -117,6 +141,12 @@ def download(source):
                         print(f"\r  {have:6d}/{wanted}", end="", flush=True)
                     if have >= wanted:
                         break
+                    if have == 0 and rows_read >= 500:               # a format I don't understand: stop wasting time
+                        print(f"\n  {source}: 500 rows, none understood. Columns: {list(row.keys())}. "
+                              f"Skipping it; the first row is in {OUT_DIR}/{source}.sample.json")
+                        with open(progress_path, "w") as progress:
+                            progress.write("0")
+                        return
             with open(progress_path, "w") as progress:
                 progress.write(str(rows_read))
             break                                           # read to the end (or got enough)

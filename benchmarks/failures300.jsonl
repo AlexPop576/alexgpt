@@ -1,0 +1,294 @@
+{"id": "facts_en_01", "category": "facts_en", "kind": "fact", "turns": ["who wrote Hamlet?"], "expect": "shakespeare", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_02", "category": "facts_en", "kind": "fact", "turns": ["who painted the Mona Lisa?"], "expect": "leonardo|da vinci", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_03", "category": "facts_en", "kind": "fact", "turns": ["what is the capital of Australia?"], "expect": "canberra", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_04", "category": "facts_en", "kind": "fact", "turns": ["what is the capital of Canada?"], "expect": "ottawa", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_05", "category": "facts_en", "kind": "fact", "turns": ["what is the capital of Japan?"], "expect": "tokyo", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_06", "category": "facts_en", "kind": "fact", "turns": ["how tall is Mount Everest?"], "expect": "8,?8\\d\\d|29,0\\d\\d", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_07", "category": "facts_en", "kind": "fact", "turns": ["when did World War II end?"], "expect": "1945", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_08", "category": "facts_en", "kind": "fact", "turns": ["when did World War I begin?"], "expect": "1914", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_09", "category": "facts_en", "kind": "fact", "turns": ["who discovered penicillin?"], "expect": "fleming", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_10", "category": "facts_en", "kind": "fact", "turns": ["who developed the theory of relativity?"], "expect": "einstein", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_11", "category": "facts_en", "kind": "fact", "turns": ["what is the largest planet in the solar system?"], "expect": "jupiter", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_12", "category": "facts_en", "kind": "fact", "turns": ["what is the chemical symbol for gold?"], "expect": "\\bau\\b", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_13", "category": "facts_en", "kind": "fact", "turns": ["who was the first person to walk on the Moon?"], "expect": "armstrong", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_14", "category": "facts_en", "kind": "fact", "turns": ["when did the Berlin Wall fall?"], "expect": "1989", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_15", "category": "facts_en", "kind": "fact", "turns": ["what is the longest river in Africa?"], "expect": "\\bnile", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_16", "category": "facts_en", "kind": "fact", "turns": ["how many bones are in the adult human body?"], "expect": "206", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_17", "category": "facts_en", "kind": "fact", "turns": ["who wrote Pride and Prejudice?"], "expect": "austen", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_18", "category": "facts_en", "kind": "fact", "turns": ["what is the capital of Romania?"], "expect": "bucharest", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_19", "category": "facts_en", "kind": "fact", "turns": ["when was the Eiffel Tower completed?"], "expect": "1889", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_20", "category": "facts_en", "kind": "fact", "turns": ["who composed the Moonlight Sonata?"], "expect": "beethoven", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_21", "category": "facts_en", "kind": "fact", "turns": ["what is the boiling point of water in Celsius?"], "expect": "\\b100\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_22", "category": "facts_en", "kind": "fact", "turns": ["who was the first president of the United States?"], "expect": "washington", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_23", "category": "facts_en", "kind": "fact", "turns": ["what is the smallest planet in the solar system?"], "expect": "mercury", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_24", "category": "facts_en", "kind": "fact", "turns": ["when did the Titanic sink?"], "expect": "1912", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_25", "category": "facts_en", "kind": "fact", "turns": ["who invented the light bulb?"], "expect": "edison|swan", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_26", "category": "facts_en", "kind": "fact", "turns": ["what is the capital of Italy?"], "expect": "\\brome\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_27", "category": "facts_en", "kind": "fact", "turns": ["which ocean is the largest?"], "expect": "pacific", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_28", "category": "facts_en", "kind": "fact", "turns": ["who wrote 1984?"], "expect": "orwell", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_29", "category": "facts_en", "kind": "fact", "turns": ["what is the speed of light?"], "expect": "299|300,000|300 000", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_30", "category": "facts_en", "kind": "fact", "turns": ["when did Romania join NATO?"], "expect": "2004", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_31", "category": "facts_en", "kind": "fact", "turns": ["when did Romania join the European Union?"], "expect": "2007", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_32", "category": "facts_en", "kind": "fact", "turns": ["who founded Microsoft?"], "expect": "gates|allen", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_33", "category": "facts_en", "kind": "fact", "turns": ["what is the currency of Japan?"], "expect": "\\byen\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_34", "category": "facts_en", "kind": "fact", "turns": ["who painted The Starry Night?"], "expect": "gogh", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_35", "category": "facts_en", "kind": "fact", "turns": ["what language is spoken in Brazil?"], "expect": "portuguese", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_36", "category": "facts_en", "kind": "fact", "turns": ["what is the highest mountain in Romania?"], "expect": "moldoveanu", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_en_37", "category": "facts_en", "kind": "fact", "turns": ["who wrote The Odyssey?"], "expect": "homer", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_38", "category": "facts_en", "kind": "fact", "turns": ["when did Christopher Columbus reach the Americas?"], "expect": "1492", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_39", "category": "facts_en", "kind": "fact", "turns": ["what is the capital of Spain?"], "expect": "madrid", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_en_40", "category": "facts_en", "kind": "fact", "turns": ["who formulated the law of universal gravitation?"], "expect": "newton", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_ro_01", "category": "facts_ro", "kind": "fact", "turns": ["cine a scris Luceafarul?"], "expect": "eminescu", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_02", "category": "facts_ro", "kind": "fact", "turns": ["care este capitala Frantei?"], "expect": "paris", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_03", "category": "facts_ro", "kind": "fact", "turns": ["cand a avut loc Marea Unire?"], "expect": "1918", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_04", "category": "facts_ro", "kind": "fact", "turns": ["cine a fost Stefan cel Mare?"], "expect": "moldov|domn|voievod", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "facts_ro_05", "category": "facts_ro", "kind": "fact", "turns": ["care este cel mai lung râu din România?"], "expect": "dunar|mures", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_06", "category": "facts_ro", "kind": "fact", "turns": ["unde se afla Delta Dunarii?"], "expect": "tulcea|romania|dobrog|ucrain", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_07", "category": "facts_ro", "kind": "fact", "turns": ["cine a inventat stiloul?"], "expect": "poenaru", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_08", "category": "facts_ro", "kind": "fact", "turns": ["când s-a născut Mihai Eminescu?"], "expect": "1850", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "facts_ro_09", "category": "facts_ro", "kind": "fact", "turns": ["care este capitala Germaniei?"], "expect": "berlin", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_10", "category": "facts_ro", "kind": "fact", "turns": ["cine a pictat Gioconda?"], "expect": "leonardo|vinci", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_11", "category": "facts_ro", "kind": "fact", "turns": ["ce limba se vorbeste in Austria?"], "expect": "german", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_12", "category": "facts_ro", "kind": "fact", "turns": ["cand a cazut Zidul Berlinului?"], "expect": "1989", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "facts_ro_13", "category": "facts_ro", "kind": "fact", "turns": ["cine a fost primul om pe Luna?"], "expect": "armstrong", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_14", "category": "facts_ro", "kind": "fact", "turns": ["care este cea mai mare planetă din sistemul solar?"], "expect": "jupiter", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_15", "category": "facts_ro", "kind": "fact", "turns": ["în ce an a murit Ștefan cel Mare?"], "expect": "1504", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_16", "category": "facts_ro", "kind": "fact", "turns": ["cine a compus Rapsodia romana?"], "expect": "enescu", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "facts_ro_17", "category": "facts_ro", "kind": "fact", "turns": ["care este capitala Republicii Moldova?"], "expect": "chisinau", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_18", "category": "facts_ro", "kind": "fact", "turns": ["cand a intrat Romania in Uniunea Europeana?"], "expect": "2007", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_19", "category": "facts_ro", "kind": "fact", "turns": ["cine a scris Amintiri din copilărie?"], "expect": "creang", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_20", "category": "facts_ro", "kind": "fact", "turns": ["unde este Castelul Bran?"], "expect": "brasov|bran", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "facts_ro_21", "category": "facts_ro", "kind": "fact", "turns": ["cine a construit Turnul Eiffel?"], "expect": "eiffel", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_22", "category": "facts_ro", "kind": "fact", "turns": ["când a avut loc Revoluția Română?"], "expect": "1989", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_23", "category": "facts_ro", "kind": "fact", "turns": ["care este cel mai inalt varf din Romania?"], "expect": "moldoveanu", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_24", "category": "facts_ro", "kind": "fact", "turns": ["cine a fost Constantin Brancusi?"], "expect": "sculpt", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "facts_ro_25", "category": "facts_ro", "kind": "fact", "turns": ["cine a inventat telefonul?"], "expect": "bell|meucci", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_26", "category": "facts_ro", "kind": "fact", "turns": ["ce este fotosinteza?"], "expect": "lumin|plant|energ", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_27", "category": "facts_ro", "kind": "fact", "turns": ["care este capitala Italiei?"], "expect": "\\broma\\b", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_28", "category": "facts_ro", "kind": "fact", "turns": ["în ce an a aderat România la NATO?"], "expect": "2004", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "facts_ro_29", "category": "facts_ro", "kind": "fact", "turns": ["cine a scris Moara cu noroc?"], "expect": "slavici", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_ro_30", "category": "facts_ro", "kind": "fact", "turns": ["cine a fost Henri Coanda?"], "expect": "inventator|aviat|fizician|inginer", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "facts_hard_01", "category": "facts_hard", "kind": "fact", "turns": ["who invented the telephone?"], "expect": "bell|meucci", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_02", "category": "facts_hard", "kind": "fact", "turns": ["who invented the radio?"], "expect": "marconi|tesla|popov", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_03", "category": "facts_hard", "kind": "fact", "turns": ["who invented the airplane?"], "expect": "wright", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_04", "category": "facts_hard", "kind": "fact", "turns": ["who invented the printing press?"], "expect": "gutenberg", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_hard_05", "category": "facts_hard", "kind": "fact", "turns": ["who discovered America?"], "expect": "columbus|leif|erikson", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_06", "category": "facts_hard", "kind": "fact", "turns": ["who discovered the structure of DNA?"], "expect": "watson|crick|franklin", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_07", "category": "facts_hard", "kind": "fact", "turns": ["who invented the World Wide Web?"], "expect": "berners", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_08", "category": "facts_hard", "kind": "fact", "turns": ["who invented the steam engine?"], "expect": "watt|newcomen|savery", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_hard_09", "category": "facts_hard", "kind": "fact", "turns": ["who discovered radium?"], "expect": "curie", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_10", "category": "facts_hard", "kind": "fact", "turns": ["who invented the electric battery?"], "expect": "volta", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_11", "category": "facts_hard", "kind": "fact", "turns": ["who wrote Don Quixote?"], "expect": "cervantes", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_12", "category": "facts_hard", "kind": "fact", "turns": ["who wrote War and Peace?"], "expect": "tolstoy", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_hard_13", "category": "facts_hard", "kind": "fact", "turns": ["who painted the Sistine Chapel ceiling?"], "expect": "michelangelo", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_14", "category": "facts_hard", "kind": "fact", "turns": ["who was the first emperor of Rome?"], "expect": "augustus", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_15", "category": "facts_hard", "kind": "fact", "turns": ["who killed Julius Caesar?"], "expect": "brutus|cassius", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_16", "category": "facts_hard", "kind": "fact", "turns": ["who founded Apple?"], "expect": "jobs|wozniak", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_hard_17", "category": "facts_hard", "kind": "fact", "turns": ["who invented the telescope?"], "expect": "lippershey|galileo", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_18", "category": "facts_hard", "kind": "fact", "turns": ["who invented the computer?"], "expect": "babbage|turing|zuse|neumann", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_19", "category": "facts_hard", "kind": "fact", "turns": ["who invented dynamite?"], "expect": "nobel", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_20", "category": "facts_hard", "kind": "fact", "turns": ["who composed The Four Seasons?"], "expect": "vivaldi", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_hard_21", "category": "facts_hard", "kind": "fact", "turns": ["when was the United Nations founded?"], "expect": "1945", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_22", "category": "facts_hard", "kind": "fact", "turns": ["when was NATO founded?"], "expect": "1949", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_23", "category": "facts_hard", "kind": "fact", "turns": ["when did the French Revolution begin?"], "expect": "1789", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_24", "category": "facts_hard", "kind": "fact", "turns": ["when did humans first land on the Moon?"], "expect": "1969", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_hard_25", "category": "facts_hard", "kind": "fact", "turns": ["when did the Western Roman Empire fall?"], "expect": "\\b476\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_26", "category": "facts_hard", "kind": "fact", "turns": ["when was the euro introduced?"], "expect": "1999|2002", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_27", "category": "facts_hard", "kind": "fact", "turns": ["when was Google founded?"], "expect": "1998", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_28", "category": "facts_hard", "kind": "fact", "turns": ["when was Facebook founded?"], "expect": "2004", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "facts_hard_29", "category": "facts_hard", "kind": "fact", "turns": ["when did the Chernobyl disaster happen?"], "expect": "1986", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "facts_hard_30", "category": "facts_hard", "kind": "fact", "turns": ["when did Napoleon die?"], "expect": "1821", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_01", "category": "false_premise", "kind": "false_premise", "turns": ["when did Napoleon visit Cluj?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_02", "category": "false_premise", "kind": "false_premise", "turns": ["what did Mihai Eminescu say about Tokyo?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_03", "category": "false_premise", "kind": "false_premise", "turns": ["when did Albert Einstein live in Bucharest?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_04", "category": "false_premise", "kind": "false_premise", "turns": ["who did Stefan cel Mare fight in Brazil?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "false_premise_05", "category": "false_premise", "kind": "false_premise", "turns": ["when did the Beatles play in Jibou?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_06", "category": "false_premise", "kind": "false_premise", "turns": ["how did Shakespeare describe Romania?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_07", "category": "false_premise", "kind": "false_premise", "turns": ["când a vizitat Napoleon Clujul?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "false_premise_08", "category": "false_premise", "kind": "false_premise", "turns": ["when did Elon Musk buy Dacia?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "false_premise_09", "category": "false_premise", "kind": "false_premise", "turns": ["who built the Eiffel Tower in Cluj?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_10", "category": "false_premise", "kind": "false_premise", "turns": ["when did Mozart visit Sibiu?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_11", "category": "false_premise", "kind": "false_premise", "turns": ["when did Nikola Tesla live in Iasi?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_12", "category": "false_premise", "kind": "false_premise", "turns": ["why did Dracula build the Eiffel Tower?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "false_premise_13", "category": "false_premise", "kind": "false_premise", "turns": ["when did Taylor Swift perform in Jibou?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_14", "category": "false_premise", "kind": "false_premise", "turns": ["când a cântat Michael Jackson în Jibou?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "false_premise_15", "category": "false_premise", "kind": "false_premise", "turns": ["ce a spus Eminescu despre Japonia?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "false_premise_16", "category": "false_premise", "kind": "false_premise", "turns": ["when did Shakespeare visit Bucharest?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "false_premise_17", "category": "false_premise", "kind": "false_premise", "turns": ["what did Abraham Lincoln say about Romania?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_18", "category": "false_premise", "kind": "false_premise", "turns": ["when did Leonardo da Vinci paint in Cluj?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_19", "category": "false_premise", "kind": "false_premise", "turns": ["when did Eminescu travel to America?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_20", "category": "false_premise", "kind": "false_premise", "turns": ["why did Einstein move to Sibiu?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "false_premise_21", "category": "false_premise", "kind": "false_premise", "turns": ["when did Mozart compose music in Iasi?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_22", "category": "false_premise", "kind": "false_premise", "turns": ["when did Isaac Newton live in Paris?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_23", "category": "false_premise", "kind": "false_premise", "turns": ["when did Cleopatra visit Romania?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_24", "category": "false_premise", "kind": "false_premise", "turns": ["who did Napoleon marry in Bucharest?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "false_premise_25", "category": "false_premise", "kind": "false_premise", "turns": ["when did Brancusi win the Nobel Prize?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_26", "category": "false_premise", "kind": "false_premise", "turns": ["when did Elvis Presley perform in Cluj?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_27", "category": "false_premise", "kind": "false_premise", "turns": ["why did Tesla build a tower in Brasov?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_28", "category": "false_premise", "kind": "false_premise", "turns": ["when did Picasso live in Timisoara?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "false_premise_29", "category": "false_premise", "kind": "false_premise", "turns": ["when did Gandhi visit Constanta?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_30", "category": "false_premise", "kind": "false_premise", "turns": ["cand a jucat Hagi la Manchester United?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "false_premise_31", "category": "false_premise", "kind": "false_premise", "turns": ["când a vizitat Einstein Timișoara?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "false_premise_32", "category": "false_premise", "kind": "false_premise", "turns": ["de ce a construit Stefan cel Mare Turnul Eiffel?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "false_premise_33", "category": "false_premise", "kind": "false_premise", "turns": ["când a cântat Mozart la Cluj?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "false_premise_34", "category": "false_premise", "kind": "false_premise", "turns": ["când a locuit Shakespeare în Brașov?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "false_premise_35", "category": "false_premise", "kind": "false_premise", "turns": ["ce a inventat Eminescu in Japonia?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_36", "category": "false_premise", "kind": "false_premise", "turns": ["when did Albert Einstein play for Barcelona?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "false_premise_37", "category": "false_premise", "kind": "false_premise", "turns": ["when did Mount Everest erupt?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_38", "category": "false_premise", "kind": "false_premise", "turns": ["when did Romania win the FIFA World Cup?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_39", "category": "false_premise", "kind": "false_premise", "turns": ["who was the king of Australia in 1500?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "false_premise_40", "category": "false_premise", "kind": "false_premise", "turns": ["when did the Moon landing happen in Romania?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "followup_01", "category": "followup", "kind": "fact", "turns": ["who is Alesso?", "where is he from?"], "expect": "swed|stockholm", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_02", "category": "followup", "kind": "fact", "turns": ["what is the capital of France?", "and of Germany?"], "expect": "berlin", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_03", "category": "followup", "kind": "fact", "turns": ["who wrote Hamlet?", "when was he born?"], "expect": "1564", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_04", "category": "followup", "kind": "fact", "turns": ["tell me about the Danube", "how long is it?"], "expect": "2,?8\\d\\d|1,7\\d\\d", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "followup_05", "category": "followup", "kind": "fact", "turns": ["who was Napoleon?", "when did he die?"], "expect": "1821", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_06", "category": "followup", "kind": "fact", "turns": ["what is the weather in Paris?", "and in Cluj?"], "expect": "cluj", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_07", "category": "followup", "kind": "fact", "turns": ["what time is it in Tokyo?", "and in London?"], "expect": "\\d{1,2}:\\d{2}", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_08", "category": "followup", "kind": "fact", "turns": ["who painted the Mona Lisa?", "when was he born?"], "expect": "1452", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "followup_09", "category": "followup", "kind": "fact", "turns": ["cine a scris Luceafarul?", "cand s-a nascut el?"], "expect": "1850", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "followup_10", "category": "followup", "kind": "fact", "turns": ["care este capitala Frantei?", "dar a Italiei?"], "expect": "\\broma\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_11", "category": "followup", "kind": "fact", "turns": ["who invented the telephone?", "where was he born?"], "expect": "edinburgh|scotland", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_12", "category": "followup", "kind": "fact", "turns": ["who is Elon Musk?", "what companies does he run?"], "expect": "tesla|spacex", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "followup_13", "category": "followup", "kind": "fact", "turns": ["what is NATO?", "when was it founded?"], "expect": "1949", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_14", "category": "followup", "kind": "fact", "turns": ["who was Albert Einstein?", "what prize did he win?"], "expect": "nobel", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_15", "category": "followup", "kind": "fact", "turns": ["what is Cluj-Napoca?", "how many people live there?"], "expect": "\\d{3}[ ,.]?\\d{3}", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_16", "category": "followup", "kind": "fact", "turns": ["tell me about Mount Everest", "how tall is it?"], "expect": "8,?8\\d\\d", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "followup_17", "category": "followup", "kind": "fact", "turns": ["cine a fost Stefan cel Mare?", "cand a murit?"], "expect": "1504", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "followup_18", "category": "followup", "kind": "fact", "turns": ["what is the capital of Japan?", "and of China?"], "expect": "beijing", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_19", "category": "followup", "kind": "fact", "turns": ["who wrote 1984?", "what else did he write?"], "expect": "animal farm", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_20", "category": "followup", "kind": "fact", "turns": ["what countries are in Scandinavia?", "and in the Baltics?"], "expect": "estonia|latvia|lithuania", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "followup_21", "category": "followup", "kind": "fact", "turns": ["who discovered penicillin?", "when?"], "expect": "1928", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_22", "category": "followup", "kind": "fact", "turns": ["tell me about the Eiffel Tower", "when was it built?"], "expect": "1887|1889", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_23", "category": "followup", "kind": "fact", "turns": ["who is the author of Harry Potter?", "where was she born?"], "expect": "yate|england|gloucestershire|bristol", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_24", "category": "followup", "kind": "fact", "turns": ["what is the largest planet?", "how many moons does it have?"], "expect": "\\b\\d{2}\\b", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "followup_25", "category": "followup", "kind": "fact", "turns": ["cine a fost Mihai Viteazul?", "cand a murit el?"], "expect": "1601", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "followup_26", "category": "followup", "kind": "fact", "turns": ["ce este Dunarea?", "cat de lunga este?"], "expect": "2.?8\\d\\d", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "followup_27", "category": "followup", "kind": "fact", "turns": ["who founded Microsoft?", "when?"], "expect": "1975", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_28", "category": "followup", "kind": "fact", "turns": ["who was Mozart?", "where was he born?"], "expect": "salzburg", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "followup_29", "category": "followup", "kind": "fact", "turns": ["what is the Louvre?", "where is it?"], "expect": "paris", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "followup_30", "category": "followup", "kind": "fact", "turns": ["who was Nikola Tesla?", "where was he born?"], "expect": "smiljan|croatia|austria", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_01", "category": "style_reset", "kind": "style", "turns": ["tell me about NATO", "tell me about the Danube", "tell me about Mount Everest", "What is your name?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_02", "category": "style_reset", "kind": "style", "turns": ["tell me about NATO", "tell me about the Danube", "tell me about Mount Everest", "how are you?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_03", "category": "style_reset", "kind": "style", "turns": ["tell me about NATO", "tell me about the Danube", "tell me about Mount Everest", "thanks!"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_04", "category": "style_reset", "kind": "style", "turns": ["tell me about NATO", "tell me about the Danube", "tell me about Mount Everest", "Cum te cheamă?"], "expect": "singularity", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "style_reset_05", "category": "style_reset", "kind": "style", "turns": ["tell me about Romania", "tell me about Paris", "tell me about the Moon", "What is your name?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_06", "category": "style_reset", "kind": "style", "turns": ["tell me about Romania", "tell me about Paris", "tell me about the Moon", "how are you?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_07", "category": "style_reset", "kind": "style", "turns": ["tell me about Romania", "tell me about Paris", "tell me about the Moon", "thanks!"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_08", "category": "style_reset", "kind": "style", "turns": ["tell me about Romania", "tell me about Paris", "tell me about the Moon", "Cum te cheamă?"], "expect": "singularity", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "style_reset_09", "category": "style_reset", "kind": "style", "turns": ["tell me about Napoleon", "tell me about Mihai Eminescu", "tell me about Albert Einstein", "What is your name?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_10", "category": "style_reset", "kind": "style", "turns": ["tell me about Napoleon", "tell me about Mihai Eminescu", "tell me about Albert Einstein", "how are you?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_11", "category": "style_reset", "kind": "style", "turns": ["tell me about Napoleon", "tell me about Mihai Eminescu", "tell me about Albert Einstein", "thanks!"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_12", "category": "style_reset", "kind": "style", "turns": ["tell me about Napoleon", "tell me about Mihai Eminescu", "tell me about Albert Einstein", "Cum te cheamă?"], "expect": "singularity", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "style_reset_13", "category": "style_reset", "kind": "style", "turns": ["tell me about Japan", "tell me about Brazil", "tell me about Egypt", "What is your name?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_14", "category": "style_reset", "kind": "style", "turns": ["tell me about Japan", "tell me about Brazil", "tell me about Egypt", "how are you?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_15", "category": "style_reset", "kind": "style", "turns": ["tell me about Japan", "tell me about Brazil", "tell me about Egypt", "thanks!"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_16", "category": "style_reset", "kind": "style", "turns": ["tell me about Japan", "tell me about Brazil", "tell me about Egypt", "Cum te cheamă?"], "expect": "singularity", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "style_reset_17", "category": "style_reset", "kind": "style", "turns": ["tell me about photosynthesis", "tell me about black holes", "tell me about volcanoes", "What is your name?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_18", "category": "style_reset", "kind": "style", "turns": ["tell me about photosynthesis", "tell me about black holes", "tell me about volcanoes", "how are you?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_19", "category": "style_reset", "kind": "style", "turns": ["tell me about photosynthesis", "tell me about black holes", "tell me about volcanoes", "thanks!"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "style_reset_20", "category": "style_reset", "kind": "style", "turns": ["tell me about photosynthesis", "tell me about black holes", "tell me about volcanoes", "Cum te cheamă?"], "expect": "singularity", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "identity_01", "category": "identity", "kind": "identity", "turns": ["who are you exactly?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_02", "category": "identity", "kind": "identity", "turns": ["what's your name, bot?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_03", "category": "identity", "kind": "identity", "turns": ["can you browse the internet?"], "expect": "wiki|internet|search|\\bno\\b|can't|cannot", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_04", "category": "identity", "kind": "identity", "turns": ["what's my favorite color?"], "expect": "don't know|no way|tell me|haven't", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "identity_05", "category": "identity", "kind": "identity", "turns": ["where do I work?"], "expect": "don't know|no way|tell me|haven't", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_06", "category": "identity", "kind": "identity", "turns": ["what family of models are you from?"], "expect": "cosmos", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_07", "category": "identity", "kind": "identity", "turns": ["unde lucrez eu?"], "expect": "nu stiu|nu am cum|spune-mi|nu mi-ai", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "identity_08", "category": "identity", "kind": "identity", "turns": ["ce poți face pentru mine?"], "expect": "pot|explic|rezum|vorbesc", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "identity_09", "category": "identity", "kind": "identity", "turns": ["din ce familie de modele faci parte?"], "expect": "cosmos", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "identity_10", "category": "identity", "kind": "identity", "turns": ["what does CosmosLM mean?"], "expect": "cosmos|famil|alex", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_11", "category": "identity", "kind": "identity", "turns": ["are you smarter than ChatGPT?"], "expect": "\\bno\\b|small|smaller", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_12", "category": "identity", "kind": "identity", "turns": ["do you remember our last conversation?"], "expect": "\\bno\\b|don't|only|can't", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "identity_13", "category": "identity", "kind": "identity", "turns": ["tell me who made you"], "expect": "alex", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_14", "category": "identity", "kind": "identity", "turns": ["yo, who am I chatting with?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_15", "category": "identity", "kind": "identity", "turns": ["introduce urself pls"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_16", "category": "identity", "kind": "identity", "turns": ["what should I call u?"], "expect": "singularity", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "identity_17", "category": "identity", "kind": "identity", "turns": ["whose project are you?"], "expect": "alex", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_18", "category": "identity", "kind": "identity", "turns": ["what kind of AI are you?"], "expect": "language model|singularity|small", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_19", "category": "identity", "kind": "identity", "turns": ["how many params?"], "expect": "125|million", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_20", "category": "identity", "kind": "identity", "turns": ["on what hardware were you trained?"], "expect": "card|gpu|graphics|computer", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "identity_21", "category": "identity", "kind": "identity", "turns": ["is a human typing these answers?"], "expect": "\\bno\\b|\\bnot\\b|model|\\bai\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_22", "category": "identity", "kind": "identity", "turns": ["can you look things up online?"], "expect": "wiki|internet|search|\\bno\\b|can't|cannot", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_23", "category": "identity", "kind": "identity", "turns": ["what do you know about my job?"], "expect": "don't know|no way|tell me|haven't", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_24", "category": "identity", "kind": "identity", "turns": ["what's my mom's name?"], "expect": "don't know|no way|tell me|haven't", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "identity_25", "category": "identity", "kind": "identity", "turns": ["tell me about CosmosLM"], "expect": "cosmos|famil|alex", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_26", "category": "identity", "kind": "identity", "turns": ["cine te-a făcut pe tine, botule?"], "expect": "alex", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "identity_27", "category": "identity", "kind": "identity", "turns": ["ce fel de AI ești?"], "expect": "model|singularity", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "identity_28", "category": "identity", "kind": "identity", "turns": ["ești Claude?"], "expect": "\\bnu\\b|singularity", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "identity_29", "category": "identity", "kind": "identity", "turns": ["pe ce placă video ai fost antrenat?"], "expect": "plac|gpu|calculator", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "identity_30", "category": "identity", "kind": "identity", "turns": ["știi cum o cheamă pe mama mea?"], "expect": "nu stiu|nu am cum|spune-mi|nu mi-ai", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "identity_31", "category": "identity", "kind": "identity", "turns": ["poți căuta pe internet?"], "expect": "wiki|internet|caut|\\bnu\\b", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "identity_32", "category": "identity", "kind": "identity", "turns": ["da-mi un rezumat despre tine"], "expect": "singularity|alex|model", "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "identity_33", "category": "identity", "kind": "identity", "turns": ["what are your limits?"], "expect": "small|mistake|wrong|facts|can't", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "identity_34", "category": "identity", "kind": "identity", "turns": ["which company owns you?"], "expect": "alex|\\bno\\b|singularity|student", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_01", "category": "chitchat", "kind": "chat", "turns": ["hi there"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_02", "category": "chitchat", "kind": "chat", "turns": ["good morning!"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_03", "category": "chitchat", "kind": "chat", "turns": ["I'm bored"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_04", "category": "chitchat", "kind": "chat", "turns": ["I just finished my exam!"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "chitchat_05", "category": "chitchat", "kind": "chat", "turns": ["thank you so much"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_06", "category": "chitchat", "kind": "chat", "turns": ["see you later"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_07", "category": "chitchat", "kind": "chat", "turns": ["I'm feeling sad today"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_08", "category": "chitchat", "kind": "chat", "turns": ["can you cheer me up?"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "chitchat_09", "category": "chitchat", "kind": "chat", "turns": ["what should I do this weekend?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_10", "category": "chitchat", "kind": "chat", "turns": ["tell me something nice"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_11", "category": "chitchat", "kind": "chat", "turns": ["I love pizza"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_12", "category": "chitchat", "kind": "chat", "turns": ["it's raining today"], "expect": null, "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "chitchat_13", "category": "chitchat", "kind": "chat", "turns": ["I'm going to sleep"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_14", "category": "chitchat", "kind": "chat", "turns": ["how was your day?"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_15", "category": "chitchat", "kind": "chat", "turns": ["you're awesome"], "expect": null, "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "chitchat_16", "category": "chitchat", "kind": "chat", "turns": ["salut!"], "expect": null, "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "chitchat_17", "category": "chitchat", "kind": "chat", "turns": ["buna dimineata"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_18", "category": "chitchat", "kind": "chat", "turns": ["ma plictisesc"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_19", "category": "chitchat", "kind": "chat", "turns": ["am terminat examenul!"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_20", "category": "chitchat", "kind": "chat", "turns": ["mersi mult"], "expect": null, "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "chitchat_21", "category": "chitchat", "kind": "chat", "turns": ["pe curand"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_22", "category": "chitchat", "kind": "chat", "turns": ["sunt trist azi"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_23", "category": "chitchat", "kind": "chat", "turns": ["ce sa fac in weekend?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_24", "category": "chitchat", "kind": "chat", "turns": ["spune-mi ceva frumos"], "expect": null, "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "chitchat_25", "category": "chitchat", "kind": "chat", "turns": ["imi place pizza"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_26", "category": "chitchat", "kind": "chat", "turns": ["ploua azi"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_27", "category": "chitchat", "kind": "chat", "turns": ["ma duc la culcare"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_28", "category": "chitchat", "kind": "chat", "turns": ["cum a fost ziua ta?"], "expect": null, "min_matches": 1, "lang": "ro", "split": "heldout"}
+{"id": "chitchat_29", "category": "chitchat", "kind": "chat", "turns": ["esti super"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "chitchat_30", "category": "chitchat", "kind": "chat", "turns": ["noapte buna"], "expect": null, "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "superlatives_lists_01", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the most visited country in the world?"], "expect": "france", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_02", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the largest country in the world?"], "expect": "russia", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_03", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the most populous country?"], "expect": "india|china", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_04", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the smallest country in the world?"], "expect": "vatican", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "superlatives_lists_05", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the tallest building in the world?"], "expect": "burj khalifa", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_06", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the deepest ocean?"], "expect": "pacific|mariana", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_07", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the largest desert in the world?"], "expect": "sahara|antarctic", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_08", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the longest river in the world?"], "expect": "\\bnile|amazon", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "superlatives_lists_09", "category": "superlatives_lists", "kind": "fact", "turns": ["which country has the most islands?"], "expect": "sweden|finland|norway|indonesia", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_10", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the biggest city in Romania?"], "expect": "bucure|bucharest", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_11", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the largest lake in the world?"], "expect": "caspian", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_12", "category": "superlatives_lists", "kind": "fact", "turns": ["what is the fastest animal?"], "expect": "cheetah|falcon", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "superlatives_lists_13", "category": "superlatives_lists", "kind": "fact", "turns": ["care este cel mai mare oras din Romania?"], "expect": "bucure", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "superlatives_lists_14", "category": "superlatives_lists", "kind": "fact", "turns": ["care este cea mai mare tara din lume?"], "expect": "rusia", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "superlatives_lists_15", "category": "superlatives_lists", "kind": "fact", "turns": ["care este cel mai lung rau din lume?"], "expect": "\\bnil|amazon", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "superlatives_lists_16", "category": "superlatives_lists", "kind": "list", "turns": ["list some songs by Calvin Harris"], "expect": "summer|feel so close|this is what you came for|one kiss|we found love|outside|how deep", "min_matches": 2, "lang": "en", "split": "heldout"}
+{"id": "superlatives_lists_17", "category": "superlatives_lists", "kind": "list", "turns": ["list albums by Queen"], "expect": "night at the opera|news of the world|jazz|innuendo|kind of magic|sheer heart attack|the game", "min_matches": 2, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_18", "category": "superlatives_lists", "kind": "list", "turns": ["name some books by Mark Twain"], "expect": "tom sawyer|huckleberry|prince and the pauper|connecticut yankee", "min_matches": 2, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_19", "category": "superlatives_lists", "kind": "list", "turns": ["what are the largest cities in Europe?"], "expect": "istanbul|moscow|london|paris|madrid|berlin", "min_matches": 2, "lang": "en", "split": "dev"}
+{"id": "superlatives_lists_20", "category": "superlatives_lists", "kind": "list", "turns": ["which countries border Romania?"], "expect": "hungary|ukraine|serbia|bulgaria|moldova", "min_matches": 2, "lang": "en", "split": "heldout"}
+{"id": "tools_01", "category": "tools", "kind": "tool", "turns": ["what is 245 * 18?"], "expect": "4410|4,410", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_02", "category": "tools", "kind": "tool", "turns": ["what is 15% of 240?"], "expect": "\\b36\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_03", "category": "tools", "kind": "tool", "turns": ["what is the square root of 144?"], "expect": "\\b12\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_04", "category": "tools", "kind": "tool", "turns": ["what is 2^10?"], "expect": "1024|1,024", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "tools_05", "category": "tools", "kind": "tool", "turns": ["1234 + 5678"], "expect": "6912|6,912", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_06", "category": "tools", "kind": "tool", "turns": ["radical din 81"], "expect": "\\b9\\b", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "tools_07", "category": "tools", "kind": "tool", "turns": ["cat face 7 x 8?"], "expect": "\\b56\\b", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "tools_08", "category": "tools", "kind": "tool", "turns": ["what is 100 / 8?"], "expect": "12[.,]5", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "tools_09", "category": "tools", "kind": "tool", "turns": ["10 km to miles"], "expect": "6[.,]21", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_10", "category": "tools", "kind": "tool", "turns": ["100 celsius to fahrenheit"], "expect": "\\b212\\b", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_11", "category": "tools", "kind": "tool", "turns": ["5 kg to pounds"], "expect": "11[.,]0", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_12", "category": "tools", "kind": "tool", "turns": ["1 mile to km"], "expect": "1[.,]609", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "tools_13", "category": "tools", "kind": "tool", "turns": ["what time is it in Tokyo?"], "expect": "\\d{1,2}:\\d{2}", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_14", "category": "tools", "kind": "tool", "turns": ["ce ora e in Paris?"], "expect": "\\d{1,2}:\\d{2}", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_15", "category": "tools", "kind": "tool", "turns": ["weather in London"], "expect": "°", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_16", "category": "tools", "kind": "tool", "turns": ["vremea in Iasi"], "expect": "°", "min_matches": 1, "lang": "en", "split": "heldout"}
+{"id": "tools_17", "category": "tools", "kind": "tool", "turns": ["roll 2 dice"], "expect": "\\d", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_18", "category": "tools", "kind": "tool", "turns": ["flip a coin"], "expect": "heads|tails|cap|pajur|ban", "min_matches": 1, "lang": "en", "split": "dev"}
+{"id": "tools_19", "category": "tools", "kind": "tool", "turns": ["alege dintre pizza si paste"], "expect": "pizza|paste", "min_matches": 1, "lang": "ro", "split": "dev"}
+{"id": "tools_20", "category": "tools", "kind": "tool", "turns": ["what happened today in history?"], "expect": "\\d{3,4}", "min_matches": 1, "lang": "en", "split": "heldout"}
