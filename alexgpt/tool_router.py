@@ -189,6 +189,10 @@ def route(user_text):
     # Wikipedia: "tell me about X", "spune-mi despre X", "search on wikipedia about X", "who is X", "ce este X"
     topic = None
     for pattern in (r"wikipedia\s*(?:about|for|despre|pentru)?\s+(.+)$", r"(?:cauta|search|find)\b.*?\b(?:about|despre)\s+(.+)$",
+                    # "write a text about Ultra Miami", "scrie-mi un eseu despre Eminescu": the facts come from Wikipedia
+                    r"(?:write|compose|give me|scrie|scrie-mi|fa-mi|compune)\s+(?:me\s+)?(?:a|an|un|o)?\s*(?:short\s+|long\s+|scurt\s+|lung\s+)?"
+                    r"(?:text|essay|paragraph|article|summary|description|presentation|eseu|compunere|paragraf|articol|rezumat|"
+                    r"descriere|prezentare)\s+(?:about|on|despre|cu|pe)\s+(.+)$",
                     r"(?:tell me (?:more )?about|spune-mi (?:mai mult )?despre|povesteste-mi despre|vorbeste-mi despre|"
                     r"explain|explica-mi|who is|who was|cine este|cine e|cine a fost|what is|what are|ce este|ce e|ce sunt|"
                     r"descrie|^despre)\s+(.+)$"):       # a bare "despre" only at the start: "ce a spus Eminescu despre Japonia" is a question
@@ -239,6 +243,8 @@ def route_question(user_text, previous_user_text=""):
         return wiki_call(topic), True
     if LIST_REQUEST.match(text) and not re.search(r"\b(you|your|my|tu|tale|mele)\b", text, re.I):
         return wiki_call(text), False                   # "tell me songs by Calvin Harris": lists get invented without a source
+    if LIST_THINGS.search(text) and named_entities(text) and not re.search(r"\b(you|your|my|tu|tale|mele)\b", text, re.I):
+        return wiki_call(text), False                   # "Martin Garrix most famous songs": a name + songs, no verb
     if not QUESTION_START.match(text) or is_not_factual(text):
         return None, False
     from alexgpt.tools import _terms
@@ -274,6 +280,7 @@ PRONOUNS = re.compile(r"\b(he|she|they|him|them|his|her|their|el|ea|ei|lui|lor|d
 LIST_REQUEST = re.compile(r"^(?:tell me|give me|name|list|show me|spune-mi|zi-mi|dă-mi|da-mi|numește|numeste|enumeră|enumera)\b.*\b"
                           r"(songs?|albums?|movies?|films?|books?|works|games|singles?|tracks?|melodii|melodie|melodiile|piese|piesă|piesa|piesele|albume|albumele|"
                           r"filme|filmele|cărți|carti|cărțile|jocuri|opere)\b", re.I)
+LIST_THINGS = re.compile(r"\b(songs?|albums?|singles?|hits|melodii|melodiile|piese|piesele|albume|albumele)\b", re.I)
 
 
 def route_followup(user_text, last_call):
@@ -295,7 +302,12 @@ def route_followup(user_text, last_call):
 
 def with_topic(user_text, topic):
     """'what songs does he have' + 'Alesso' -> 'what songs does Alesso have'  (the last Wikipedia title)"""
-    if not topic or not PRONOUNS.search(user_text):
+    if not topic:
+        return user_text
+    about_it = re.search(r"\b(about|on|despre)\s+(it|this|that|asta|aia|el|ea)\s*[?.!]*\s*$", user_text, re.I)
+    if about_it:                                       # "write an essay about it" -> "... about Ultra Music Festival"
+        return user_text[:about_it.start(2)] + topic + user_text[about_it.end(2):]
+    if not PRONOUNS.search(user_text):
         return user_text
 
     def replace(match):

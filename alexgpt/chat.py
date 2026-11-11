@@ -556,6 +556,7 @@ class SingularityChat(SupernovaChat):
         root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(checkpoint_path))))
         tools.MEMORY_FILE = os.path.join(root, "memory.json")
         self.gate_log = os.path.join(root, "runs", "history_gate.jsonl")   # every history on/off decision, to review
+        self.history_reason = ""
         self.use_history = True            # set by run_tools() each turn (strategy 3: only for follow-ups)
         self.topic = None                  # topic memory: the last article title or name the user talked about
         self.history_turns = 2             # a 126M model gets confused by longer chats: it sees only the last exchange
@@ -609,7 +610,15 @@ class SingularityChat(SupernovaChat):
         if not history:                                 # a new chat: nothing from the last chat may leak in
             self.last_call, self.last_wiki_title, self.topic = None, None, None
         follow_up, reason = tool_router.is_follow_up(prompt)
+        last_reply = ""
+        for message in reversed(history or []):
+            if message.get("role") == "assistant":
+                last_reply = (message.get("text") or message.get("content") or "").strip()
+                break
+        if not follow_up and last_reply.endswith("?") and len(prompt.split()) <= 8 and not tool_router.named_entities(prompt):
+            follow_up, reason = True, "answers the question the bot just asked"   # "Cum îți merge ziua?" -> "Bine, ție?"
         self.use_history = follow_up and bool(history)
+        self.history_reason = reason
         self.log_history_gate(prompt, reason)
         visualize_after, self.visualize = self.visualize, False       # the tool-call tokens are not drawn; the answer is
         try:
@@ -661,6 +670,7 @@ class SingularityChat(SupernovaChat):
             event = {"type": "tool", "tool": name, "call": call, "result": result}
             if name == "wiki" and ok:
                 details = dict(tools.LAST_WIKI)
+                details["fact"] = tools.LAST_SEARCH.get("fact")     # the Wikidata fact, for grounded_sentences()
                 if must_be_relevant and not details.get("relevant", True):
                     ok = False
                 elif details.get("url"):
@@ -723,7 +733,8 @@ class SingularityChat(SupernovaChat):
             self.tool_messages = extra or None
             self.abstain_if_no_evidence(routed, text, tool_router)
             return
-        if not self.use_history:                        # identity self-RAG: "who made you?" -> Alex's own answer
+        small_talk_answer = self.history_reason == "answers the question the bot just asked"    # "Bine, ție?"
+        if not self.use_history or small_talk_answer:   # identity self-RAG: "who made you?" -> Alex's own answer
             from alexgpt import identity_rag
             answer, group = identity_rag.reply(text, self.name)
             remembered = tools.memory_get("")
@@ -1338,7 +1349,7 @@ def generate_stream(model, prompt, max_chars, temperature, rng, history=None, vi
         for waiting in held:                            # the end came while a few tokens waited: show real words
             if waiting["char"].strip():
                 yield waiting
-        more = grounded_sentences(said, wiki.get("long", ""))
+        more = grounded_sentences(said, wiki.get("long", ""), question=prompt, fact=wiki.get("fact"))
         if more:
             yield {"type": "token", "char": "\n\n" + more, "prob": 1.0, "grounded": True}
         yield {"type": "source", "title": wiki["title"], "url": wiki["url"], "site": "Wikipedia"}
@@ -1346,16 +1357,39 @@ def generate_stream(model, prompt, max_chars, temperature, rng, history=None, vi
         yield ending
 
 
-def grounded_sentences(said, article_text, max_chars=700):
-    """The article's sentences the model did not already say (at most max_chars), as one paragraph.
+def grounded_sentences(said, article_text, question="", fact=None, max_chars=450):
+    """Checked text added after the model's own answer, as one paragraph (at most max_chars):
+        1. the Wikidata fact, if the model did not already say it  ("Martin Garrix's best-known songs include Animals, ...")
+        2. the article's sentences that share the most words with the question, in the article's order
+           (no shared words -> the first sentences, as before)
     A sentence counts as said if most of its words are already in the answer."""
+    from alexgpt import tools
     said_words = set(re.findall(r"\w+", said.lower()))
-    picked = ""
-    for sentence in re.split(r"(?<=[.!?])\s+(?=[A-ZĂÂÎȘȚ„\"0-9])", article_text.replace("\n\n", " ")):
+
+    def already_said(sentence):
         words = [w for w in re.findall(r"\w+", sentence.lower()) if len(w) > 3]
-        if not words or sum(w in said_words for w in words) / len(words) > 0.6:
-            continue
-        if picked and len(picked) + len(sentence) > max_chars:
+        return not words or sum(w in said_words for w in words) / len(words) > 0.6
+
+    picked = []
+    if fact and fact.get("sentence"):
+        values = fact.get("values") or []
+        said_values = sum(value.lower() in said.lower() for value in values)
+        if not values or said_values < max(1, len(values) // 2):
+            picked.append(fact["sentence"])
+    question_stems = {tools._stem(word) for word in tools._terms(question)}
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+(?=[A-ZĂÂÎȘȚ„\"0-9])", article_text.replace("\n\n", " "))]
+    candidates = []                                                    # (shared words, position, sentence)
+    for position, sentence in enumerate(sentences):
+        if sentence and not already_said(sentence):
+            shared = len(question_stems & {tools._stem(word) for word in tools._terms(sentence)})
+            candidates.append((shared, position, sentence))
+    if any(shared for shared, _, _ in candidates):
+        candidates.sort(key=lambda item: (-item[0], item[1]))           # best match first, then earlier
+    chosen, used = [], sum(len(p) for p in picked)
+    for shared, position, sentence in candidates:
+        if (chosen or picked) and used + len(sentence) > max_chars:
             break
-        picked += (" " if picked else "") + sentence.strip()
-    return picked
+        chosen.append((position, sentence))
+        used += len(sentence)
+    picked += [sentence for _, sentence in sorted(chosen)]
+    return " ".join(picked)

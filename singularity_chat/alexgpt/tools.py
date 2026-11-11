@@ -170,6 +170,16 @@ def _stem(word):
     return word[:5] if len(word) > 5 else word          # "orbits" and "orbit", "românia" and "româniei" match
 
 
+def remove_brackets(text):
+    """'Garritsen (Dutch pronunciation: [mɑrˈtɛin] ( listen); born 1996), known as' -> 'Garritsen, known as'.
+    One pass only removes the innermost (...); nested ones need a loop."""
+    while True:
+        shorter = re.sub(r"\s*\([^()]*\)", "", text)
+        if shorter == text:
+            return text
+        text = shorter
+
+
 def _split_sentences(text):
     return [s for s in re.split(r"(?<=[.!?])\s+(?=[A-ZĂÂÎȘȚ„\"0-9])", text) if s.strip()]
 
@@ -231,14 +241,17 @@ def _search_candidates(get, language, query):
     key = f"search|{language}|{query.lower()}"
     if key not in _WIKI_PAGES:
         pages = get({"action": "query", "generator": "search", "gsrsearch": query, "gsrlimit": 5,
-                     "prop": "extracts|redirects|pageprops", "ppprop": "wikibase_item", "exintro": 1, "explaintext": 1, "exlimit": 5,
+                     "prop": "extracts|redirects|pageprops", "ppprop": "wikibase_item|disambiguation", "exintro": 1, "explaintext": 1, "exlimit": 5,
                      "rdlimit": "max", "rdprop": "title"}).get("query", {}).get("pages", {})
         candidates = []
         for page in pages.values():
             candidates.append({"title": page.get("title", ""), "intro": page.get("extract", "").strip(),
                                "aliases": [r["title"] for r in page.get("redirects", [])], "rank": page.get("index", 99),
-                               "item": page.get("pageprops", {}).get("wikibase_item")})       # its Wikidata id, e.g. Q83186
+                               "item": page.get("pageprops", {}).get("wikibase_item"),       # its Wikidata id, e.g. Q83186
+                               "disambiguation": "disambiguation" in page.get("pageprops", {})})
         candidates.sort(key=lambda c: c["rank"])
+        real = [c for c in candidates if not c["disambiguation"]]  # "Ultra (may refer to: Adobe Ultra, Sun Ultra...)": a list of links, no facts
+        candidates = real or candidates
         if len(_WIKI_PAGES) > 300:
             _WIKI_PAGES.clear()
         _WIKI_PAGES[key] = candidates
@@ -415,7 +428,7 @@ def wiki(query, language="en", max_chars=MAX_RESULT_CHARS):
             continue
         if skipping or len(line) < 40:
             continue
-        line = re.sub(r"\s*\([^()]*\)", "", line)                    # (pronunciations, dates in brackets)
+        line = remove_brackets(line)                                   # (pronunciations, dates in brackets)
         line = re.sub(r"\s+", " ", line).strip()
         if line:
             paragraphs.append({"text": line, "intro": in_intro, "sentences": _split_sentences(line)})
