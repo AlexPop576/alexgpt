@@ -81,7 +81,7 @@ const SCENARIOS = {
     source: "Invention of the telephone",
   },
   calc: {
-    chip: "Calculator", prompt: "What is 17*23?",
+    chip: "Calc", prompt: "What is 17*23?",
     gates: { followup: ["no", "there is no earlier tool call to repeat"], rules: ["yes", "“17*23” is math → calculator"] },
     tool: { kind: "calc", tab: "calc", call: "calc: 17*23", left: "17", op: "×", right: "23", result: "391" },
     context: "17*23 = 391",
@@ -114,7 +114,7 @@ const SCENARIOS = {
     rest: " is 7°C with light rain.",
   },
   identity: {
-    chip: "About the model", prompt: "Who made you?",
+    chip: "Identity", prompt: "Who made you?",
     gates: { followup: ["no", "there is no earlier tool call"], rules: ["no", "no tool fits"], question: ["no", "it is about me, not about the world"], identity: ["yes", "very close to “Who created you?” in the identity file"] },
     tool: { kind: "identity", tab: "identity", matches: [["Who created you?", 0.91], ["What is your name?", 0.34], ["How many parameters do you have?", 0.22], ["What can you do?", 0.18]], threshold: 0.75 },
     direct: { kind: "identity", text: "I was made by Alex, a computer science student in Cluj, as a project to learn how language models work." },
@@ -989,7 +989,7 @@ function buildScenarioChips() {
     chip.className = "chip glass";
     chip.dataset.key = key;
     chip.innerHTML = "<i>" + SCENARIOS[key].chip + "</i>" + SCENARIOS[key].prompt;
-    chip.addEventListener("click", () => { $("promptInput").value = SCENARIOS[key].prompt; run(key); });
+    chip.addEventListener("click", () => run(key));
     chip.title = key === "followup" ? "Runs “" + SCENARIOS[key].before.user + "” first, then the follow-up" : "Run it on the real model";
     $("scenarios").append(chip);
   }
@@ -1199,6 +1199,8 @@ async function prepareRun(key) {
   const chip = key ? SCENARIOS[key] : null;
   const prompt = chip ? chip.prompt : $("promptInput").value.trim();
   if (!prompt) return false;
+  $("promptInput").value = "";                            // like the chat: the box empties once the message is sent
+  $("hint").classList.add("gone");
   const ticket = ++loading;
   clock.run += 1;                                         // stop the animation that is playing
   for (const element of document.querySelectorAll(".chip")) element.classList.toggle("on", element.dataset.key === key);
@@ -1225,18 +1227,36 @@ async function prepareRun(key) {
     demo = fromRecord(record, before, key);
     exploreHistory = historyOf(record);
     lastExchange = exchangeOf(record);
-    $("dataMode").textContent = "· real model";
+    $("dataMode").textContent = "";
   } else {
     const fallback = key || pickScenario(prompt);
     demo = { ...SCENARIOS[fallback], chipKey: fallback };
-    $("dataMode").textContent = "· offline demo, fake data";
+    $("dataMode").textContent = "offline demo";
   }
   return true;
 }
 
+// running: the ▶ button becomes ■ (stop).  Stop = the same "cancel" a new message uses (clock.run changes).
+let running = false;
+function setRunning(on) {
+  running = on;
+  $("runButton").textContent = on ? "■" : "▶";
+  $("runButton").title = on ? "Stop" : "Run";
+  $("runButton").classList.toggle("stop", on);
+}
+function stopRun() {
+  loading += 1;                                           // a reply still on its way is ignored
+  clock.run += 1;                                         // every animation that is playing ends
+  if (clock.paused) { clock.paused = false; $("pauseButton").textContent = "❚❚"; }
+  setRunning(false);
+  caption("Stopped. Type another message, or pick one above.");
+}
+
 async function run(key) {
+  const ticket = loading + 1;
+  setRunning(true);
   const ready = await prepareRun(key);
-  if (!ready) return;
+  if (!ready) { if (loading <= ticket) setRunning(false); return; }
   resetRun();
   try {
     await routerPhase();
@@ -1264,9 +1284,8 @@ async function run(key) {
 }
 
 function finish() {
-  caption("Done. <b>Click any board</b> to read about it, or pick another question below.");
-  $("hint").textContent = "Drag to look around · scroll to zoom · right-drag to move · click a board";
-  $("hint").style.opacity = 1;
+  setRunning(false);
+  caption("Done. <b>Click any board</b> to read about it, or ask something else below.");
 }
 
 // 01: the checks light up one by one: green = yes, red = no; after a yes, the rest are not checked
@@ -1913,7 +1932,11 @@ world.addEventListener("pointerup", (event) => {
 });
 
 // ---------------------------------------------------------------- controls
-$("promptForm").addEventListener("submit", (event) => { event.preventDefault(); run(null); });
+$("promptForm").addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (running) stopRun();
+  else run(null);
+});
 $("pauseButton").addEventListener("click", () => {
   clock.paused = !clock.paused;
   $("pauseButton").textContent = clock.paused ? "▶" : "❚❚";
@@ -1922,7 +1945,12 @@ $("stepButton").addEventListener("click", () => {
   if (!clock.paused) { clock.paused = true; $("pauseButton").textContent = "▶"; }
   clock.finishNow = true;
 });
-$("speed").addEventListener("input", (event) => { clock.speed = parseFloat(event.target.value); });
+for (const button of $("speed").querySelectorAll("button")) {
+  button.addEventListener("click", () => {
+    clock.speed = parseFloat(button.dataset.speed);
+    for (const other of $("speed").querySelectorAll("button")) other.classList.toggle("on", other === button);
+  });
+}
 $("overviewButton").addEventListener("click", () => flyTo(OVERVIEW, 1400, null, true));
 $("historyButton").addEventListener("click", () => $("history").classList.add("open"));
 $("historyClose").addEventListener("click", () => $("history").classList.remove("open"));

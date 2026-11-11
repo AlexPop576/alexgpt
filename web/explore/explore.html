@@ -39,10 +39,12 @@
     /* top bar */
     .top { position: fixed; top: 14px; left: 14px; right: 14px; display: flex; align-items: center; gap: 10px; pointer-events: none; }
     .top > * { pointer-events: auto; }
-    .brand { display: flex; align-items: center; gap: 10px; padding: 8px 14px; }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 8px 14px; width: 214px; }
     .brand b { font-weight: 600; }
     .brand .tag { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); border: 1px solid rgba(201,197,255,.35); padding: 2px 8px; border-radius: 20px; }
-    .brand .mock { font-size: 11px; color: var(--mlp); }
+    .brand .mock { font-size: 11px; color: var(--mlp); margin-left: auto; }
+    .brand .mock:empty { display: none; }
+    a.pill { color: var(--text); text-decoration: none; }
     .spacer { flex: 1; }
     .pill { padding: 8px 14px; cursor: pointer; display: flex; align-items: center; gap: 8px; }
     .pill:hover { border-color: rgba(201,197,255,.4); }
@@ -79,14 +81,22 @@
     .ctrl { width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.04); cursor: pointer; display: grid; place-items: center; flex: none; }
     .ctrl:hover { border-color: rgba(201,197,255,.4); }
     .ctrl.go { background: var(--accent); color: #15132a; border: 0; }
-    .speed { display: flex; align-items: center; gap: 6px; color: var(--faint); font-size: 11.5px; }
-    .speed input { width: 70px; accent-color: var(--accent); }
-    .chips { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-    .chip { padding: 5px 11px; border-radius: 20px; font-size: 12.5px; cursor: pointer; color: var(--muted); }
+    /* speed: 4 small buttons, the chosen one lit */
+    .speed { display: flex; align-items: center; gap: 2px; padding: 3px; border-radius: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.03); }
+    .speed button { border: 0; background: none; color: var(--faint); font-size: 12px; font-family: var(--mono); padding: 5px 7px; border-radius: 7px; cursor: pointer; }
+    .speed button:hover { color: var(--text); }
+    .speed button.on { background: rgba(201,197,255,.16); color: var(--text); }
+    .ctrl.go.stop { background: rgba(255,106,69,.18); color: var(--ban); border: 1px solid rgba(255,106,69,.4); }
+    /* demo questions: ONE row; on a narrow screen it scrolls sideways */
+    .chips { display: flex; gap: 6px; flex-wrap: nowrap; justify-content: safe center; overflow-x: auto; scrollbar-width: none;
+      width: min(960px, calc(100vw - 28px)); align-self: center; }       /* a bit wider than the prompt box, between the side panels */
+    .chips::-webkit-scrollbar { display: none; }
+    .chip { padding: 4px 10px; border-radius: 20px; font-size: 11.5px; cursor: pointer; color: var(--muted); white-space: nowrap; flex: none; }
     .chip:hover, .chip.on { color: var(--text); border-color: rgba(201,197,255,.45); }
     .chip i { font-style: normal; color: var(--faint); margin-right: 5px; }
 
-    .hint { position: fixed; left: 50%; bottom: 112px; transform: translateX(-50%); padding: 7px 14px; font-size: 12.5px; color: var(--muted); transition: opacity .4s; white-space: nowrap; }
+    .hint { align-self: center; padding: 6px 14px; font-size: 12px; color: var(--muted); transition: opacity .4s; white-space: nowrap; }
+    .hint.gone { display: none; }
     .caption { position: fixed; left: 50%; top: 66px; transform: translateX(-50%); max-width: min(600px, calc(100% - 520px)); padding: 9px 16px; font-size: 14px; line-height: 1.45; display: flex; gap: 10px; align-items: baseline; }
     .caption .n { font-family: var(--mono); font-size: 11px; color: var(--accent); white-space: nowrap; }
     .caption b { color: var(--accent); font-weight: 600; }
@@ -309,10 +319,10 @@
 
   <div class="top">
     <div class="brand glass">
-      <b>CosmosLM</b><span class="tag">Explore</span><span>Singularity</span><span class="mock" id="dataMode">· real model</span>
+      <b>CosmosLM</b><span class="tag">Explore</span><span class="mock" id="dataMode" title="No server: made-up numbers"></span>
     </div>
     <div class="spacer"></div>
-    <a class="pill glass" href="/" style="text-decoration:none" title="Back to the CosmosLM chat">← Back to chat</a>
+    <a class="pill glass" href="/" title="Back to the CosmosLM chat">← Back to chat</a>
     <button class="pill glass" id="overviewButton" title="See the whole path">Overview</button>
     <button class="pill glass" id="historyButton">How it was built</button>
   </div>
@@ -321,17 +331,19 @@
 
   <aside class="info glass" id="info"></aside>
 
-  <div class="hint glass" id="hint">Drag to look around · scroll to zoom · right-drag to move · click a board</div>
   <div class="caption glass" id="caption" hidden><span class="n" id="captionStep"></span><span id="captionText"></span></div>
 
   <div class="bottom">
+    <div class="hint glass" id="hint">Drag to look around · scroll to zoom · right-drag to move · click a board</div>
     <div class="chips" id="scenarios"></div>
     <form class="prompt glass" id="promptForm">
-      <input id="promptInput" value="Who invented the telephone?" autocomplete="off" aria-label="Your message">
-      <label class="speed">speed <input type="range" id="speed" min="0.25" max="3" step="0.25" value="1"></label>
+      <input id="promptInput" placeholder="Ask Singularity anything…" autocomplete="off" aria-label="Your message">
+      <div class="speed" id="speed" title="Animation speed">
+        <button type="button" data-speed="0.5">0.5×</button><button type="button" data-speed="1" class="on">1×</button><button type="button" data-speed="2">2×</button><button type="button" data-speed="3">3×</button>
+      </div>
       <button type="button" class="ctrl" id="pauseButton" title="Pause (space)">❚❚</button>
       <button type="button" class="ctrl" id="stepButton" title="Next step (→)">▸❘</button>
-      <button type="submit" class="ctrl go" title="Run">▶</button>
+      <button type="submit" class="ctrl go" id="runButton" title="Run">▶</button>
     </form>
   </div>
 
